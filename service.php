@@ -193,7 +193,8 @@ class Encuesta extends Service
         $response = new Response();
         $response->setResponseSubject('Encuesta: ' . $survey->title);
         $response->createFromTemplate('survey.tpl', array(
-                'survey' => $survey
+                'survey' => $survey,
+                'credit_plus' => 0
         ));
         
         return $response;
