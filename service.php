@@ -41,7 +41,13 @@ class Encuesta extends Service
         
         $answer_id = intval(trim($request->query));
         
-        $sql = "SELECT *, (select survey FROM survey_question WHERE survey_question.id = survey_answer.question) as survey_id FROM survey_answer WHERE id = $answer_id;";
+        $sql = "SELECT *, 
+                    (SELECT survey 
+                     FROM _survey_question 
+                     WHERE _survey_question.id = _survey_answer.question
+                    ) AS survey_id 
+                FROM _survey_answer 
+                WHERE id = $answer_id;";
         
         $answer = $db->deepQuery($sql);
         
@@ -52,17 +58,19 @@ class Encuesta extends Service
             return $response;
         }
         
-        $sql = "SELECT * FROM survey_answer_choosen WHERE email = '{$request->email}' AND answer = $answer_id;";
+        $sql = "SELECT 
+                    * 
+                FROM _survey_answer_choosen 
+                WHERE email = '{$request->email}' 
+                AND answer = $answer_id;";
+        
         $r = $db->deepQuery($sql);
         
         if ($answer !== false && isset($r[0])) {
-            $response = $this->surveyResponse($request, $answer[0]->survey_id);
-            $response->content['credit_plus'] = 0; 
-            $response->setResponseSubject("Ya habias seleccionado la respuesta #{$answer_id}");
-            return $response;
+            return new Response();
         }
         
-        $sql = "INSERT INTO survey_answer_choosen (email, answer) VALUES ('{$request->email}',$answer_id);";
+        $sql = "INSERT INTO _survey_answer_choosen (email, answer) VALUES ('{$request->email}',$answer_id);";
         
         $r = $db->deepQuery($sql);
         
@@ -85,11 +93,11 @@ class Encuesta extends Service
         if ($total_choosen === $total_questions) {
             $sql = "UPDATE person SET credit = credit + $credit_plus WHERE email = '{$request->email}';";
             $db->deepQuery($sql);
-            $response->setResponseSubject("Has completado la encuesta #{$answer[0]->survey_id} y has ganado $".number_format($credit_plus,2)." de credito");
+            $response->setResponseSubject("Has completado la encuesta #{$answer[0]->survey_id} y has ganado $" . number_format($credit_plus, 2) . " de credito");
             $response->content['credit_plus'] = $credit_plus;
+            return $response;
         }
-        
-        return $response;
+        return new Response();
     }
 
     /**
@@ -103,32 +111,38 @@ class Encuesta extends Service
         
         $sql_survey_datails = '
             SELECT
-                survey.id AS survey,
-                survey.title AS survey_title
+                _survey.id AS survey,
+                _survey.title AS survey_title,
+                _survey.deadline as survey_deadline
             FROM
-                survey
-            WHERE survey.active = 1';
+                _survey
+            WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE';
         
         $sql_survey_total_questions = "
         SELECT 
-            Count(survey_question.id) AS total
-        FROM survey_question 
-        WHERE survey_question.survey =  subq.survey
-        GROUP BY survey_question.survey";
+            Count(_survey_question.id) AS total
+        FROM _survey_question 
+        WHERE _survey_question.survey =  subq.survey
+        GROUP BY _survey_question.survey";
         
         $sql_survey_total_choosen = "
         SELECT total FROM (
             SELECT 
-                count(survey_answer_choosen.answer) as total,
-                (select survey_question.survey FROM survey_question WHERE survey_question.id = (select survey_answer.question FROM survey_answer WHERE survey_answer.id = survey_answer_choosen.answer)) as survey_id
-            FROM survey_answer_choosen
-            WHERE survey_answer_choosen.email = '{$request->email}'
+                count(_survey_answer_choosen.answer) as total,
+                (SELECT _survey_question.survey 
+                 FROM _survey_question 
+                 WHERE _survey_question.id = (SELECT _survey_answer.question 
+                                              FROM _survey_answer 
+                                              WHERE _survey_answer.id = _survey_answer_choosen.answer)
+                ) as survey_id
+            FROM _survey_answer_choosen
+            WHERE _survey_answer_choosen.email = '{$request->email}'
             GROUP BY survey_id
-        ) as subq2 
+        ) AS subq2 
         WHERE survey_id = subq.survey";
         
         $sql = "
-        SELECT survey, survey_title as title
+        SELECT survey, survey_title as title, survey_deadline as deadline, coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion
         FROM ($sql_survey_datails) as subq
         WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);";
         
@@ -182,9 +196,8 @@ class Encuesta extends Service
             $obj->title = $r->answer_title;
             $obj->choosen = $r->choosen == '1' ? true : false;
             
-            if ($obj->choosen)
-                $newsurvey->questions[$r->question]->selectable = false;
-                        
+            if ($obj->choosen) $newsurvey->questions[$r->question]->selectable = false;
+            
             $newsurvey->questions[$r->question]->answers[] = $obj;
         }
         
@@ -200,23 +213,38 @@ class Encuesta extends Service
         return $response;
     }
 
+    /**
+     * Return details of survey
+     *
+     * @param string $email            
+     * @param integer $survey_id            
+     * @return Array
+     */
     private function getSurveyDetails ($email, $survey_id)
     {
         $sql = "
         SELECT
-        survey.id AS survey,
-        survey.title AS survey_title,
-        survey.active AS survey_active,
-        survey_question.id AS question,
-        survey_question.title AS question_title,
-        survey_answer.id AS answer,
-        survey_answer.title AS answer_title,
-        (select count(*) FROM survey_answer_choosen WHERE email = '$email' AND answer = survey_answer.id) as choosen
+            _survey.id AS survey,
+            _survey.title AS survey_title,
+            _survey.active AS survey_active,
+            _survey_question.id AS question,
+            _survey_question.title AS question_title,
+            _survey_answer.id AS answer,
+            _survey_answer.title AS answer_title,
+            (SELECT count(*) 
+             FROM _survey_answer_choosen 
+             WHERE email = '$email' 
+             AND answer = _survey_answer.id
+            ) AS choosen
         FROM
-        survey
-        INNER JOIN survey_answer
-        INNER JOIN survey_question ON survey_question.survey = survey.id AND survey_answer.question = survey_question.id
-        WHERE survey.id = $survey_id";
+        _survey
+        INNER JOIN _survey_answer
+        INNER JOIN _survey_question 
+            ON _survey_question.survey = _survey.id 
+            AND _survey_answer.question = _survey_question.id
+        WHERE _survey.id = $survey_id
+        ORDER BY _survey_question.id, _survey_answer.id";
+        
         $db = new Connection();
         return $db->deepQuery($sql);
     }
