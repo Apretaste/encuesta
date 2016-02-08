@@ -1,0 +1,8 @@
+2016-02-07
+Done) tablas que empiecen por _
+Done) agregar deadline a la encuesta
+Done) poner % de completamiento
+Done) ordernar respuestas por el ID en la interfaz
+Done) no responder al user cuando responda una pregunta
+Done) poner boton grande abajo para ver la encuesta actual (como un refresh)
+Done) diferenciar mejor respondidas de por responder
