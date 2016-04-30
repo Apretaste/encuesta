@@ -15,7 +15,7 @@
 	<tr>
 		<td>{link href="ENCUESTA {$item->survey}" caption = "{$item->title}"}</td>
 		<td align="center">{$item->deadline}</td>
-		<td align="center">{$item->completion|string_format:"%.2f"}%</td>
+		<td align="center">{$item->completion|string_format:"%.0f"}%</td>
 	</tr>
 
 	<tr>

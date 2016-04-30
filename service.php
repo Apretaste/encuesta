@@ -37,7 +37,7 @@ class Encuesta extends Service
     {
         $db = new Connection();
         
-        $credit_plus = 0.5;
+        $credit_plus = 1;
         
         $answer_id = intval(trim($request->query));
         
@@ -142,7 +142,9 @@ class Encuesta extends Service
         WHERE survey_id = subq.survey";
         
         $sql = "
-        SELECT survey, survey_title as title, survey_deadline as deadline, coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion
+        SELECT survey, survey_title as title,
+        survey_deadline as deadline, 
+        coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion
         FROM ($sql_survey_datails) as subq
         WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);";
         
