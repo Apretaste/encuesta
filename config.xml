@@ -1,6 +1,6 @@
 <service>
 	<serviceName>encuesta</serviceName>
-	<serviceDescription><![CDATA[Responder encuestas p&uacute;blicas y obtener cr&eacute;dito por ello]]></serviceDescription>
+	<serviceDescription><![CDATA[Permite responder encuestas p&uacute;blicas y obtener cr&eacute;dito por ello]]></serviceDescription>
 	<creatorEmail>salvi.pascual@gmail.com</creatorEmail>
 	<serviceCategory>social</serviceCategory>
 	<serviceUsage>
