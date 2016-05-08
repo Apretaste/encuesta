@@ -22,9 +22,12 @@
 		</tr>
 		{/foreach}
 	</table>
-	{space15}
+	{space10}
+
+	<p><small>
+		Escoja una encuesta para comenzar.<br/>
+		Todas las encuestas son personales y an&oacute;nimas.<br/>
+		El <i>Valor</i> es la cantidad que ganar&aacute; cuando finalice la encuesta.
+	</small></p>
 {/if}
 
-{space10}
-
-<p><small>Escoja una encuesta para comenzar. Las encuestas son personales y an&oacute;nimas. El <i>Valor</i> es la cantidad que le ser&aacute; asignada a su cr&eacute;dito cuando finalice la encuesta.</small></p>
