@@ -5,7 +5,7 @@
 {else}
 	<table width="100%">
 		<tr>
-			<th align="left">Encuesta</th>
+			<th align="left">T&iacute;tulo</th>
 			<th align="center">Vence</th>
 			<th>Hecho</th>
 			<th>Valor</th>
@@ -18,9 +18,13 @@
 			<td>{link href="ENCUESTA {$item->survey}" caption = "{$item->title}"}</td>
 			<td align="center">{$item->deadline|date_format:"%d/%m/%y"}</td>
 			<td align="center">{$item->completion|string_format:"%.0f"}%</td>
-			<td align="center">$5</td>
+			<td align="center">{$item->value|number_format:2}</td>
 		</tr>
 		{/foreach}
 	</table>
 	{space15}
 {/if}
+
+{space10}
+
+<p><small>Escoja una encuesta para comenzar. Las encuestas son personales y an&oacute;nimas. El <i>Valor</i> es la cantidad que le ser&aacute; asignada a su cr&eacute;dito cuando finalice la encuesta.</small></p>
