@@ -30,4 +30,3 @@
 		El <i>Valor</i> es la cantidad que ganar&aacute; cuando finalice la encuesta.
 	</small></p>
 {/if}
-

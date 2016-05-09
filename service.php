@@ -180,6 +180,7 @@ class Encuesta extends Service
 		$newsurvey = new stdClass();
 		$newsurvey->id = $survey[0]->survey;
 		$newsurvey->title = $survey[0]->survey_title;
+		$newsurvey->details = $survey[0]->survey_details;
 		$newsurvey->questions = array();
 
 		foreach ($survey as $r)
@@ -204,11 +205,9 @@ class Encuesta extends Service
 			$newsurvey->questions[$r->question]->answers[] = $obj;
 		}
 
-		$survey = $newsurvey;
-
 		$response = new Response();
-		$response->setResponseSubject('Encuesta: ' . $survey->title);
-		$response->createFromTemplate('survey.tpl', array('survey' => $survey, 'credit_plus' => 0));
+		$response->setResponseSubject('Encuesta: ' . $newsurvey->title);
+		$response->createFromTemplate('survey.tpl', array('survey' => $newsurvey));
 		return $response;
 	}
 
@@ -225,6 +224,7 @@ class Encuesta extends Service
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
+				_survey.details AS survey_details,
 				_survey.active AS survey_active,
 				_survey_question.id AS question,
 				_survey_question.title AS question_title,
