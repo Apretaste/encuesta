@@ -12,13 +12,14 @@
 	{/if}
 </table>
 
-{space15}
+{space10}
 
-<table width="100%">
+<table width="100%" cellspacing="0">
 {foreach from=$survey->questions item=question}
 <tr {if $question@iteration is even}bgcolor="#F2F2F2"{/if}>
-	<td valign="top" width="1">{$question@iteration})</td>
+	<td valign="top" width="1">{space5}{$question@iteration})</td>
 	<td>
+		{space5}
 		<b>{$question->title}</b>
 		{if not $question->selectable}<font color="green">&#10004;</font>{/if}
 		{space5}
@@ -29,7 +30,7 @@
 				<li>{link href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" size="small"}</li> 
 			{/if}
 		{/foreach}
-		{space10}
+		{space5}
 	</td>
 </tr>
 {/foreach}

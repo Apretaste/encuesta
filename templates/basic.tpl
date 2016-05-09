@@ -1,17 +1,13 @@
-<h1>Encuestas activas</h1>
-
 {if $no_surveys}
 	<p>Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos d&iacute;as. Gracias por estar pendiente a nuestras encuestas.</p>
 {else}
+	<h1>Encuestas activas</h1>
 	<table width="100%">
 		<tr>
 			<th align="left">T&iacute;tulo</th>
 			<th align="center">Vence</th>
 			<th>Hecho</th>
 			<th>Valor</th>
-		</tr>
-		<tr>
-			<td colspan="4"><hr/></td>
 		</tr>
 		{foreach item=item from=$surveys}
 		<tr>
@@ -22,6 +18,7 @@
 		</tr>
 		{/foreach}
 	</table>
+
 	{space10}
 
 	<p><small>
