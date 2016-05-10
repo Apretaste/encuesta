@@ -111,8 +111,7 @@ class Encuesta extends Service
 	 */
 	private function defaultResponse ($request)
 	{
-		$connection = new Connection();
-
+		// get list of opened surveys
 		$sql_survey_datails = "
 			SELECT 
 				_survey.id AS survey, 
@@ -121,13 +120,11 @@ class Encuesta extends Service
 				_survey.value as survey_value
 			FROM _survey
 			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE";
-		
 		$sql_survey_total_questions = "
 			SELECT COUNT(_survey_question.id) AS total
 			FROM _survey_question 
 			WHERE _survey_question.survey =  subq.survey
 			GROUP BY _survey_question.survey";
-
 		$sql_survey_total_choosen = "
 			SELECT total FROM (
 				SELECT COUNT(_survey_answer_choosen.answer) as total, (
@@ -143,8 +140,7 @@ class Encuesta extends Service
 				GROUP BY survey_id
 			) AS subq2 
 			WHERE survey_id = subq.survey";
-
-		$sql = "
+		$opened = "
 			SELECT 
 				survey, 
 				survey_title as title, 
@@ -154,12 +150,25 @@ class Encuesta extends Service
 			FROM ($sql_survey_datails) as subq
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);";
 
-		$surveys = $connection->deepQuery($sql);
+		//get the list of surveys answered
+		$finished = "
+			SELECT A.email, A.responses, B.total, A.finished, C.title, C.value
+			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS finished FROM _survey_answer_choosen GROUP BY survey) A
+			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
+			ON A.survey = B.survey
+			LEFT JOIN (SELECT * FROM _survey) C
+			ON A.survey = C.id
+			WHERE responses = total";
 
+		// run both queries
+		$connection = new Connection();
+		$surveys = $connection->deepQuery($opened);
+		$finished = $connection->deepQuery($finished);
+
+		// send response to the user
 		$response = new Response();
 		$response->setResponseSubject(count($surveys) > 0 ? "Encuestas activas" : "No tienes encuestas que responder");
-		$response->createFromTemplate('basic.tpl', array('surveys' => $surveys,'no_surveys' => count($surveys) === 0));
-
+		$response->createFromTemplate('basic.tpl', array('surveys' => $surveys,'finished' => $finished));
 		return $response;
 	}
 

@@ -39,6 +39,8 @@
 {space15}
 
 <center>
+	<p><small><font color="red">Si respondi&oacute; todas las preguntas, pronto le llegar&aacute; un email de confirmaci&oacute;n. &iexcl;Gracias!</font></small></p>
+	{space5}
 	{button href="ENCUESTA" caption="Encuestas"}
 	{button href="ENCUESTA {$survey->id}" caption="Recargar" color="grey"}
 </center>
