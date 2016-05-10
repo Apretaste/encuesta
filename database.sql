@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: May 09, 2016 at 10:47 AM
+-- Generation Time: May 09, 2016 at 09:00 PM
 -- Server version: 5.5.49-0ubuntu0.14.04.1
 -- PHP Version: 5.5.9-1ubuntu4.16
 
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS `_survey` (
   `active` tinyint(1) NOT NULL DEFAULT '1',
   `deadline` date DEFAULT NULL,
   `value` float NOT NULL COMMENT 'Amount added to the credit when completed',
+  `answers` int(11) NOT NULL DEFAULT '0' COMMENT 'Times fully answered',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 
@@ -114,6 +115,8 @@ CREATE TABLE IF NOT EXISTS `_survey_answer` (
 
 CREATE TABLE IF NOT EXISTS `_survey_answer_choosen` (
   `email` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `survey` int(11) NOT NULL,
+  `question` int(11) NOT NULL,
   `answer` bigint(20) NOT NULL,
   `date_choosen` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`email`,`answer`),
