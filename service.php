@@ -152,8 +152,8 @@ class Encuesta extends Service
 
 		//get the list of surveys answered
 		$finished = "
-			SELECT A.email, A.responses, B.total, A.finished, C.title, C.value
-			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS finished FROM _survey_answer_choosen GROUP BY survey) A
+			SELECT email, responses, total, C.title, C.value, A.inserted
+			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->email}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -168,7 +168,7 @@ class Encuesta extends Service
 		// send response to the user
 		$response = new Response();
 		$response->setResponseSubject(count($surveys) > 0 ? "Encuestas activas" : "No tienes encuestas que responder");
-		$response->createFromTemplate('basic.tpl', array('surveys' => $surveys,'finished' => $finished));
+		$response->createFromTemplate('basic.tpl', array('surveys' => $surveys, 'finished' => $finished));
 		return $response;
 	}
 

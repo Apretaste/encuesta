@@ -34,7 +34,7 @@
 	<b>Encuestas completadas</b>
 	<ul>
 	{foreach item=item from=$finished}
-		<li>{$item->title} {separator} {$item->finished|date_format:"%d/%m/%y"} {separator} ${$item->value|number_format:2}</li>
+		<li>{$item->title} {separator} {$item->inserted|date_format:"%d/%m/%y"} {separator} ${$item->value|number_format:2}</li>
 	{/foreach}
 	</ul>
 {/if}
