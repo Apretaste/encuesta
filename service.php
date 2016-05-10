@@ -56,10 +56,11 @@ class Encuesta extends Service
 		if (isset($r[0])) return new Response();
 
 		// insert the answer into the database
-		$connection->deepQuery("INSERT INTO _survey_answer_choosen (email, answer) VALUES ('{$request->email}',$answerID)");
+		$surveyID = $answer[0]->survey_id;
+		$questionID = $answer[0]->question;
+		$connection->deepQuery("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$surveyID,$questionID,$answerID)");
 
 		// if that question answers the whole survey, add $ and send confirmation
-		$surveyID = $answer[0]->survey_id;
 		if ($this->isSurveyComplete($request->email, $surveyID))
 		{
 			// get the credit to add
@@ -69,6 +70,9 @@ class Encuesta extends Service
 
 			// add credit to the user account
 			$connection->deepQuery("UPDATE person SET credit=credit+$credit WHERE email='{$request->email}'");
+
+			// add the counter of times the survey was answered
+			$connection->deepQuery("UPDATE _survey SET answers=answers+1 WHERE id='$surveyID'");
 
 			// send completion answer
 			$response = new Response();
@@ -90,17 +94,13 @@ class Encuesta extends Service
 	 * */
 	private function isSurveyComplete($email, $surveyID)
 	{
-		$questions = array();
-		$totalChoosen = 0;
-		$details = $this->getSurveyDetails($email, $surveyID);
+		$connection = new Connection();
+		$res = $connection->deepQuery("
+			SELECT * FROM
+			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
+			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND email='$email') B");
 
-		foreach ($details as $detail)
-		{
-			$questions[$detail->question] = true;
-			if ($detail->choosen === '1') $totalChoosen++;
-		}
-
-		return $totalChoosen === count($questions);
+		return $res[0]->total === $res[0]->answers;
 	}
 
 	/**
