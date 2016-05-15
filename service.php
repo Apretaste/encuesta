@@ -184,7 +184,7 @@ class Encuesta extends Service
 		$survey = $this->getSurveyDetails($request->email, $survey_id);
 
 		// do not process invalid responses
-		if ($survey == false || ! isset($survey[0]) || empty($survey)) new Response();
+		if ($survey == false || ! isset($survey[0]) || empty($survey)) return new Response();
 
 		$newsurvey = new stdClass();
 		$newsurvey->id = $survey[0]->survey;
