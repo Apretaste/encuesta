@@ -239,7 +239,7 @@ class Encuesta extends Service
 				_survey_question.title AS question_title,
 				_survey_answer.id AS answer,
 				_survey_answer.title AS answer_title,
-				(SELECT COUNT(*) 
+				(SELECT COUNT(email) 
 				 FROM _survey_answer_choosen 
 				 WHERE email = '$email' 
 				 AND answer = _survey_answer.id
