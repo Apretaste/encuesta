@@ -2,9 +2,9 @@
 
 /**
  * Apretaste
- * 
+ *
  * Service ENCUESTA
- * 
+ *
  * @version 1.0
  *
  */
@@ -13,7 +13,7 @@ class Encuesta extends Service
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @param Request $request			
+	 * @param Request $request
 	 * @return Response
 	 */
 	public function _main (Request $request)
@@ -28,7 +28,7 @@ class Encuesta extends Service
 	/**
 	 * Subservice Responder
 	 *
-	 * @param Request $request			
+	 * @param Request $request
 	 * @return Response
 	 */
 	public function _responder(Request $request)
@@ -38,20 +38,20 @@ class Encuesta extends Service
 
 		// check if the answer is valid
 		$answer = $connection->deepQuery("
-			SELECT *, 
-				(SELECT survey 
-				 FROM _survey_question 
+			SELECT *,
+				(SELECT survey
+				 FROM _survey_question
 				 WHERE _survey_question.id = _survey_answer.question
-				) AS survey_id 
-			FROM _survey_answer 
+				) AS survey_id
+			FROM _survey_answer
 			WHERE id = $answerID");
 		if ($answer == false || ! isset($answer[0]) || empty($answer)) return new Response();
 
 		// check if person hasen't responded that question already
 		$r = $connection->deepQuery("
-			SELECT * 
-			FROM _survey_answer_choosen 
-			WHERE email = '{$request->email}' 
+			SELECT *
+			FROM _survey_answer_choosen
+			WHERE email = '{$request->email}'
 			AND answer = $answerID;");
 		if (isset($r[0])) return new Response();
 
@@ -86,7 +86,7 @@ class Encuesta extends Service
 
 	/**
 	 * Check if the survey is completed
-	 * 
+	 *
 	 * @author salvipascual
 	 * @param String $email
 	 * @param String $surveyID
@@ -104,48 +104,48 @@ class Encuesta extends Service
 	}
 
 	/**
-	 * 
 	 *
-	 * @param Request $request			
+	 *
+	 * @param Request $request
 	 * @return Response
 	 */
 	private function defaultResponse ($request)
 	{
 		// get list of opened surveys
 		$sql_survey_datails = "
-			SELECT 
-				_survey.id AS survey, 
-				_survey.title AS survey_title, 
-				_survey.deadline as survey_deadline, 
+			SELECT
+				_survey.id AS survey,
+				_survey.title AS survey_title,
+				_survey.deadline as survey_deadline,
 				_survey.value as survey_value
 			FROM _survey
 			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE";
 		$sql_survey_total_questions = "
 			SELECT COUNT(_survey_question.id) AS total
-			FROM _survey_question 
+			FROM _survey_question
 			WHERE _survey_question.survey =  subq.survey
 			GROUP BY _survey_question.survey";
 		$sql_survey_total_choosen = "
 			SELECT total FROM (
 				SELECT COUNT(_survey_answer_choosen.answer) as total, (
-					SELECT _survey_question.survey 
-					FROM _survey_question 
+					SELECT _survey_question.survey
+					FROM _survey_question
 					WHERE _survey_question.id = (
-						SELECT _survey_answer.question 
-						FROM _survey_answer 
+						SELECT _survey_answer.question
+						FROM _survey_answer
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
 					) as survey_id
 				FROM _survey_answer_choosen
 				WHERE _survey_answer_choosen.email = '{$request->email}'
 				GROUP BY survey_id
-			) AS subq2 
+			) AS subq2
 			WHERE survey_id = subq.survey";
 		$opened = "
-			SELECT 
-				survey, 
-				survey_title as title, 
-				survey_deadline as deadline, 
-				coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion, 
+			SELECT
+				survey,
+				survey_title as title,
+				survey_deadline as deadline,
+				coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion,
 				survey_value as value
 			FROM ($sql_survey_datails) as subq
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);";
@@ -175,8 +175,8 @@ class Encuesta extends Service
 	/**
 	 * Return Survey response
 	 *
-	 * @param Request $request			
-	 * @param integer $survey_id			
+	 * @param Request $request
+	 * @param integer $survey_id
 	 * @return Response
 	 */
 	private function surveyResponse($request, $survey_id)
@@ -223,8 +223,8 @@ class Encuesta extends Service
 	/**
 	 * Return details of survey
 	 *
-	 * @param string $email			
-	 * @param integer $survey_id			
+	 * @param string $email
+	 * @param integer $survey_id
 	 * @return Array
 	 */
 	private function getSurveyDetails ($email, $survey_id)
@@ -239,15 +239,15 @@ class Encuesta extends Service
 				_survey_question.title AS question_title,
 				_survey_answer.id AS answer,
 				_survey_answer.title AS answer_title,
-				(SELECT COUNT(*) 
-				 FROM _survey_answer_choosen 
-				 WHERE email = '$email' 
+				(SELECT COUNT(*)
+				 FROM _survey_answer_choosen
+				 WHERE email = '$email'
 				 AND answer = _survey_answer.id
 				) AS choosen
 			FROM _survey
 			INNER JOIN _survey_answer
-			INNER JOIN _survey_question 
-			ON _survey_question.survey = _survey.id 
+			INNER JOIN _survey_question
+			ON _survey_question.survey = _survey.id
 			AND _survey_answer.question = _survey_question.id
 			WHERE _survey.id = $survey_id
 			ORDER BY _survey_question.id, _survey_answer.id";

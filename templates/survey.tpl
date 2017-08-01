@@ -24,10 +24,10 @@
 		{if not $question->selectable}<font color="green">&#10004;</font>{/if}
 		{space5}
 		{foreach item=answer from=$question->answers}
-			{if not $question->selectable} 
-				{if $answer->choosen}<small>{$answer->title}</small>{/if} 
+			{if not $question->selectable}
+				{if $answer->choosen}<small>{$answer->title}</small>{/if}
 			{else}
-				<li>{link href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" size="small"}</li> 
+				<li>{link href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" wait="false"}</li>
 			{/if}
 		{/foreach}
 		{space5}
