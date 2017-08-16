@@ -14,7 +14,7 @@
 			<td>{link href="ENCUESTA {$item->survey}" caption = "{$item->title}"}</td>
 			<td align="center">{$item->deadline|date_format:"%d/%m/%y"}</td>
 			<td align="center">{$item->completion|string_format:"%.0f"}%</td>
-			<td align="center">${$item->value|number_format:2}</td>
+			<td align="center">§{$item->value|number_format:2}</td>
 		</tr>
 		{/foreach}
 	</table>
@@ -22,7 +22,8 @@
 	{space10}
 
 	<p><small>
-		Escoja una encuesta para comenzar {separator} Todas las encuestas son personales y an&oacute;nimas {separator} El <i>Valor</i> es la cantidad que ganar&aacute; en cr&eacute;ditos cuando complete la encuesta.
+		Todas las encuestas son an&oacute;nimas. Nadie leer&aacute; tu selecci&oacute;n. <br/>
+		El <i>Valor</i> son los cr&eacute;ditos que ganar&aacute; al completar la encuesta.
 	</small></p>
 {/if}
 
@@ -34,7 +35,7 @@
 	<b>Encuestas completadas</b>
 	<ul>
 	{foreach item=item from=$finished}
-		<li>{$item->title} {separator} {$item->inserted|date_format:"%d/%m/%y"} {separator} ${$item->value|number_format:2}</li>
+		<li>{$item->title}</li>
 	{/foreach}
 	</ul>
 {/if}

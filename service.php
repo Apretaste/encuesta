@@ -1,13 +1,5 @@
 <?php
 
-/**
- * Apretaste
- *
- * Service ENCUESTA
- *
- * @version 1.0
- *
- */
 class Encuesta extends Service
 {
 	/**
@@ -18,11 +10,13 @@ class Encuesta extends Service
 	 */
 	public function _main (Request $request)
 	{
-		$survey_id = intval(trim($request->query));
+		$res_id = intval(trim($request->query));
 
-		if ($survey_id === 0) return $this->defaultResponse($request);
+		// if no survey ID passed, show list of surveys
+		if ($res_id === 0) return $this->defaultResponse($request);
 
-		return $this->surveyResponse($request, $survey_id);
+		// else show the survey itself
+		return $this->surveyResponse($request, $res_id);
 	}
 
 	/**
@@ -37,7 +31,7 @@ class Encuesta extends Service
 		$answerID = intval(trim($request->query));
 
 		// check if the answer is valid
-		$answer = $connection->deepQuery("
+		$answer = $connection->query("
 			SELECT *,
 				(SELECT survey
 				 FROM _survey_question
@@ -48,7 +42,7 @@ class Encuesta extends Service
 		if ($answer == false || ! isset($answer[0]) || empty($answer)) return new Response();
 
 		// check if person hasen't responded that question already
-		$r = $connection->deepQuery("
+		$r = $connection->query("
 			SELECT *
 			FROM _survey_answer_choosen
 			WHERE email = '{$request->email}'
@@ -56,29 +50,23 @@ class Encuesta extends Service
 		if (isset($r[0])) return new Response();
 
 		// insert the answer into the database
-		$surveyID = $answer[0]->survey_id;
+		$resID = $answer[0]->survey_id;
 		$questionID = $answer[0]->question;
-		$connection->deepQuery("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$surveyID,$questionID,$answerID)");
+		$connection->query("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$resID,$questionID,$answerID)");
 
-		// if that question answers the whole survey, add $ and send confirmation
-		if ($this->isSurveyComplete($request->email, $surveyID))
+		// if that question answered the whole survey, add §
+		if ($this->isSurveyComplete($request->email, $resID))
 		{
 			// get the credit to add
-			$survey = $connection->deepQuery("SELECT title,value FROM _survey WHERE id='$surveyID'");
-			$credit = $survey[0]->value;
-			$title = $survey[0]->title;
+			$res = $connection->query("SELECT title,value FROM _survey WHERE id='$resID'");
+			$credit = $res[0]->value;
+			$title = $res[0]->title;
 
 			// add credit to the user account
-			$connection->deepQuery("UPDATE person SET credit=credit+$credit WHERE email='{$request->email}'");
+			$connection->query("UPDATE person SET credit=credit+$credit WHERE email='{$request->email}'");
 
 			// add the counter of times the survey was answered
-			$connection->deepQuery("UPDATE _survey SET answers=answers+1 WHERE id='$surveyID'");
-
-			// send completion answer
-			$response = new Response();
-			$response->setResponseSubject("Ha completado una encuesta");
-			$response->createFromTemplate("completed.tpl", array("title"=>$title, "credit"=>$credit));
-			return $response;
+			$connection->query("UPDATE _survey SET answers=answers+1 WHERE id='$resID'");
 		}
 
 		return new Response();
@@ -89,16 +77,16 @@ class Encuesta extends Service
 	 *
 	 * @author salvipascual
 	 * @param String $email
-	 * @param String $surveyID
+	 * @param String $resID
 	 * @return Boolean, true if survey is 100% completed
 	 * */
-	private function isSurveyComplete($email, $surveyID)
+	private function isSurveyComplete($email, $resID)
 	{
 		$connection = new Connection();
-		$res = $connection->deepQuery("
+		$res = $connection->query("
 			SELECT * FROM
-			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND email='$email') B");
+			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$resID') A,
+			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$resID' AND email='$email') B");
 
 		return $res[0]->total === $res[0]->answers;
 	}
@@ -162,13 +150,13 @@ class Encuesta extends Service
 
 		// run both queries
 		$connection = new Connection();
-		$surveys = $connection->deepQuery($opened);
-		$finished = $connection->deepQuery($finished);
+		$ress = $connection->query($opened);
+		$finished = $connection->query($finished);
 
 		// send response to the user
 		$response = new Response();
-		$response->setResponseSubject(count($surveys) > 0 ? "Encuestas activas" : "No tienes encuestas que responder");
-		$response->createFromTemplate('basic.tpl', array('surveys' => $surveys, 'finished' => $finished));
+		$response->setResponseSubject(count($ress) > 0 ? "Encuestas activas" : "No tienes encuestas que responder");
+		$response->createFromTemplate('basic.tpl', array('surveys' => $ress, 'finished' => $finished));
 		return $response;
 	}
 
@@ -176,47 +164,63 @@ class Encuesta extends Service
 	 * Return Survey response
 	 *
 	 * @param Request $request
-	 * @param integer $survey_id
+	 * @param integer $res_id
 	 * @return Response
 	 */
-	private function surveyResponse($request, $survey_id)
+	private function surveyResponse($request, $res_id)
 	{
-		$survey = $this->getSurveyDetails($request->email, $survey_id);
+		$res = $this->getSurveyDetails($request->email, $res_id);
 
 		// do not process invalid responses
-		if ($survey == false || ! isset($survey[0]) || empty($survey)) return new Response();
+		if (empty($res) || ! isset($res[0])) return new Response();
 
-		$newsurvey = new stdClass();
-		$newsurvey->id = $survey[0]->survey;
-		$newsurvey->title = $survey[0]->survey_title;
-		$newsurvey->details = $survey[0]->survey_details;
-		$newsurvey->questions = array();
+		// create a new Survey object
+		$survey = new stdClass();
+		$survey->id = $res[0]->survey;
+		$survey->title = $res[0]->survey_title;
+		$survey->details = $res[0]->survey_details;
+		$survey->value = $res[0]->survey_value;
+		$survey->completed = true;
+		$survey->questions = array();
 
-		foreach ($survey as $r)
+		foreach ($res as $r)
 		{
-			if ( ! isset($newsurvey->questions[$r->question]))
+			// create the question if it does not exist
+			if ( ! isset($survey->questions[$r->question]))
 			{
-				$obj = new stdClass();
-				$obj->id = $r->question;
-				$obj->title = $r->question_title;
-				$obj->answers = array();
-				$obj->selectable = true;
-				$newsurvey->questions[$r->question] = $obj;
+				$question = new stdClass();
+				$question->id = $r->question;
+				$question->title = $r->question_title;
+				$question->answers = array();
+				$question->completed = false;
+				$survey->questions[$r->question] = $question;
 			}
 
-			$obj = new stdClass();
-			$obj->id = $r->answer;
-			$obj->title = $r->answer_title;
-			$obj->choosen = $r->choosen == '1' ? true : false;
+			// create the answers for the question
+			$answer = new stdClass();
+			$answer->id = $r->answer;
+			$answer->title = $r->answer_title;
+			$answer->choosen = $r->choosen == '1';
 
-			if ($obj->choosen) $newsurvey->questions[$r->question]->selectable = false;
+			// mark question as completed if it was responded
+			if ($answer->choosen) $survey->questions[$r->question]->completed = true;
 
-			$newsurvey->questions[$r->question]->answers[] = $obj;
+			// assign the answer to the question
+			$survey->questions[$r->question]->answers[] = $answer;
 		}
 
+		// if all questions were responded, mark the survey as completed
+		foreach ($survey->questions as $q) {
+			if(empty($q->completed)) {
+				$survey->completed = false;
+				break;
+			}
+		}
+
+		// send response to the view
 		$response = new Response();
-		$response->setResponseSubject('Encuesta: ' . $newsurvey->title);
-		$response->createFromTemplate('survey.tpl', array('survey' => $newsurvey));
+		$response->setResponseSubject('Encuesta: ' . $survey->title);
+		$response->createFromTemplate('survey.tpl', array('survey' => $survey));
 		return $response;
 	}
 
@@ -224,15 +228,16 @@ class Encuesta extends Service
 	 * Return details of survey
 	 *
 	 * @param string $email
-	 * @param integer $survey_id
+	 * @param integer $res_id
 	 * @return Array
 	 */
-	private function getSurveyDetails ($email, $survey_id)
+	private function getSurveyDetails ($email, $res_id)
 	{
 		$sql = "
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
+				_survey.value AS survey_value,
 				_survey.details AS survey_details,
 				_survey.active AS survey_active,
 				_survey_question.id AS question,
@@ -249,10 +254,10 @@ class Encuesta extends Service
 			INNER JOIN _survey_question
 			ON _survey_question.survey = _survey.id
 			AND _survey_answer.question = _survey_question.id
-			WHERE _survey.id = $survey_id
+			WHERE _survey.id = $res_id
 			ORDER BY _survey_question.id, _survey_answer.id";
 
 		$connection = new Connection();
-		return $connection->deepQuery($sql);
+		return $connection->query($sql);
 	}
 }

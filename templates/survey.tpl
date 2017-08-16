@@ -1,18 +1,22 @@
-<table width="100%">
-	<tr>
-		<td><big><big><b>{$survey->title}</b></big></big><br/></td>
-		<td align="right" valign="top">
-			{button href="ENCUESTA {$survey->id}" caption="RECARGAR" color="grey" size="small"}
-		</td>
-	</tr>
-	{if $survey->details neq ""}
-	<tr>
-		<td colspan="2"><p><small>{$survey->details}</small></p></td>
-	</tr>
-	{/if}
-</table>
+<big><big><b>{$survey->title}</b></big></big>
 
-{space10}
+{if $survey->details neq ""}
+	<p><small>{$survey->details}</small></p>
+{/if}
+
+{if $survey->completed}
+	<table width="100%" cellspacing="0" cellpadding="15">
+		<tr>
+			<td bgcolor="yellow" align="center">
+				<b>Usted ya respondi&oacute; esta encuesta, y como agradecimiento se le agregaron §{$survey->value|number_format:2} a su saldo. Muchas gracias por su participaci&oacute;n.</b>
+			</td>
+		</tr>
+	</table>
+{else}
+	<p><small><font color="red">Responda las preguntas y presione el bot&oacute;n "Validar" para completar la encuesta y ganar §{$survey->value|number_format:2}.</font></small></p>
+{/if}
+
+{space5}
 
 <table width="100%" cellspacing="0">
 {foreach from=$survey->questions item=question}
@@ -21,10 +25,10 @@
 	<td>
 		{space5}
 		<b>{$question->title}</b>
-		{if not $question->selectable}<font color="green">&#10004;</font>{/if}
+		{if $question->completed}<font color="green">&#10004;</font>{/if}
 		{space5}
 		{foreach item=answer from=$question->answers}
-			{if not $question->selectable}
+			{if $question->completed}
 				{if $answer->choosen}<small>{$answer->title}</small>{/if}
 			{else}
 				<li>{link href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" wait="false"}</li>
@@ -39,8 +43,9 @@
 {space15}
 
 <center>
-	<p><small><font color="red">Si respondi&oacute; todas las preguntas, pronto le llegar&aacute; un email de confirmaci&oacute;n. &iexcl;Gracias!</font></small></p>
-	{space5}
-	{button href="ENCUESTA" caption="Encuestas"}
-	{button href="ENCUESTA {$survey->id}" caption="Recargar" color="grey"}
+	{if not $survey->completed}
+		<p><small><font color="red">Presione el bot&oacute;n "Validar" cuando responda todas las preguntas.</font></small></p>
+		{button href="ENCUESTA {$survey->id}" caption="Validar"}
+	{/if}
+	{button href="ENCUESTA" caption="Atr&aacute;s" color="grey"}
 </center>
