@@ -41,17 +41,21 @@ class Encuesta extends Service
 			WHERE id = $answerID");
 		if ($answer == false || ! isset($answer[0]) || empty($answer)) return new Response();
 
+		$resID = $answer[0]->survey_id;
+		$questionID = $answer[0]->question;
+
 		// check if person hasen't responded that question already
 		$r = $connection->query("
 			SELECT *
 			FROM _survey_answer_choosen
 			WHERE email = '{$request->email}'
-			AND answer = $answerID;");
-		if (isset($r[0])) return new Response();
+			AND question = {$questionID};");
+		if (isset($r[0])){
+			Connection::query("UPDATE _survey_answer_choosen SET answer={$answerID} WHERE question={$questionID} AND email='{$request->email}'");
+			return new Response();
+		} 
 
 		// insert the answer into the database
-		$resID = $answer[0]->survey_id;
-		$questionID = $answer[0]->question;
 		$connection->query("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$resID,$questionID,$answerID)");
 
 		// if that question answered the whole survey, add §
