@@ -10,6 +10,24 @@ class Encuesta extends Service
 	 */
 	public function _main (Request $request)
 	{
+		$user=Utils::getPerson($request->email);
+
+		$empty=(empty($user->date_of_birth))?"0":"1";
+		$empty.=(empty($user->gender))?"0":"1";
+		$empty.=(empty($user->highest_school_level))?"0":"1";
+		$empty.=(empty($user->province))?"0":"1";
+
+		if ($empty!="1111") {
+			$response=new Response();
+			$response->subject="Su perfil no esta completo";
+			$response->createFromText("<h1 style='text-align:center;'>Su perfil no esta completo</h1>
+			<p>Rellene todos estos datos para contestar encuestas:</p>
+			<ul><li>Fecha de nacimiento</li>
+			<li>Genero</li>
+			<li>Provincia</li>
+			<li>Nivel de educacion</li></ul>");
+			return $response;
+		}
 		$res_id = intval(trim($request->query));
 
 		// if no survey ID passed, show list of surveys
