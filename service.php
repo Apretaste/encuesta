@@ -16,8 +16,9 @@ class Encuesta extends Service
 		$empty.=(empty($user->gender))?"0":"1";
 		$empty.=(empty($user->highest_school_level))?"0":"1";
 		$empty.=(empty($user->province))?"0":"1";
+		$empty.=(empty($user->occupation))?"0":"1";
 
-		if ($empty!="1111") {
+		if ($empty!="11111") {
 			$response=new Response();
 			$response->subject="Su perfil no esta completo";
 			$response->createFromText("<h1 style='text-align:center;'>Su perfil no esta completo</h1>
@@ -25,7 +26,8 @@ class Encuesta extends Service
 			<ul><li>Fecha de nacimiento</li>
 			<li>Genero</li>
 			<li>Provincia</li>
-			<li>Nivel de educacion</li></ul>");
+			<li>Nivel de educación</li>
+			<li>Ocupación</li></ul>");
 			return $response;
 		}
 		$res_id = intval(trim($request->query));
