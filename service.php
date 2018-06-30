@@ -10,26 +10,21 @@ class Encuesta extends Service
 	 */
 	public function _main (Request $request)
 	{
-		$user=Utils::getPerson($request->email);
+		// ensure your profile is completed
+		$person = Utils::getPerson($request->email);
+		if(
+			$person->age < 5 || $person->age > 130 ||
+			empty($person->sexual_orientation) ||
+			empty($person->gender) ||
+			empty($person->province) ||
+			empty($person->skin) ||
+			empty($person->marital_status) ||
+			empty($person->highest_school_level) ||
+			empty($person->occupation) ||
+			empty($person->religion)
+		) return $this->_perfil($request);
 
-		$empty=(empty($user->date_of_birth))?"0":"1";
-		$empty.=(empty($user->gender))?"0":"1";
-		$empty.=(empty($user->highest_school_level))?"0":"1";
-		$empty.=(empty($user->province))?"0":"1";
-		$empty.=(empty($user->occupation))?"0":"1";
-
-		if ($empty!="11111") {
-			$response=new Response();
-			$response->subject="Su perfil no esta completo";
-			$response->createFromText("<h1 style='text-align:center;'>Su perfil no esta completo</h1>
-			<p>Rellene todos estos datos para contestar encuestas:</p>
-			<ul><li>Fecha de nacimiento</li>
-			<li>Genero</li>
-			<li>Provincia</li>
-			<li>Nivel de educación</li>
-			<li>Ocupación</li></ul>");
-			return $response;
-		}
+		// get the ID of the survey to open
 		$res_id = intval(trim($request->query));
 
 		// if no survey ID passed, show list of surveys
@@ -40,6 +35,120 @@ class Encuesta extends Service
 	}
 
 	/**
+	 * Edit the person's profile
+	 *
+	 * @param Request $request
+	 * @return Response
+	 */
+	public function _perfil (Request $request)
+	{
+		// get the person to edit profile
+		$person = $this->utils->getPerson($request->email);
+		if (empty($person)) return new Response();
+
+		// get the person's province
+		$person->province = str_replace("_", " ", $person->province);
+
+		// get the person's gender
+		if ($person->gender == 'M') $person->gender = "Masculino";
+		if ($person->gender == 'F') $person->gender = "Femenino";
+
+		// create date for the selects
+		$options = new stdClass();
+
+		// gender
+		$options->gender = json_encode([
+			["caption"=>"Masculino", "href"=>"PERFIL SEXO MASCULINO"],
+			["caption"=>"Femenino", "href"=>"PERFIL SEXO FEMENINO"]
+		]);
+
+		// sexual orientation
+		$options->sexual_orientation = json_encode([
+			["caption"=>"Hetero", "href"=>"PERFIL ORIENTACION HETERO"],
+			["caption"=>"Gay", "href"=>"PERFIL ORIENTACION HOMO"],
+			["caption"=>"Bi", "href"=>"PERFIL ORIENTACION BI"]
+		]);
+
+		// skin
+		$options->skin = json_encode([
+			["caption"=>"Blanco", "href"=>"PERFIL PIEL BLANCO"],
+			["caption"=>"Negro", "href"=>"PERFIL PIEL NEGRO"],
+			["caption"=>"Mestizo", "href"=>"PERFIL PIEL MESTIZO"],
+			["caption"=>"Otro", "href"=>"PERFIL PIEL OTRO"]
+		]);
+
+		// marital status
+		$options->marital_status = json_encode([
+			["caption"=>"Soltero", "href"=>"PERFIL ESTADO SOLTERO"],
+			["caption"=>"Saliendo", "href"=>"PERFIL ESTADO SALIENDO"],
+			["caption"=>"Comprometido", "href"=>"PERFIL ESTADO COMPROMETIDO"],
+			["caption"=>"Casado", "href"=>"PERFIL ESTADO CASADO"]
+		]);
+
+		// highest school level
+		$options->highest_school_level = json_encode([
+			["caption"=>"Primario", "href"=>"PERFIL NIVEL PRIMARIO"],
+			["caption"=>"Secundario", "href"=>"PERFIL NIVEL SECUNDARIO"],
+			["caption"=>"Tecnico", "href"=>"PERFIL NIVEl TECNICO"],
+			["caption"=>"Universitario", "href"=>"PERFIL NIVEl UNIVERSITARIO"],
+			["caption"=>"Postgraduado", "href"=>"PERFIL NIVEl POSTGRADUADO"],
+			["caption"=>"Doctorado", "href"=>"PERFIL NIVEl DOCTORADO"],
+			["caption"=>"Otro", "href"=>"PERFIL NIVEl OTRO"]
+		]);
+
+		// occupation
+		$options->occupation = json_encode([
+			["caption"=>"Trabajador estatal", "href"=>"PERFIL PROFESION Trabajador estatal"],
+			["caption"=>"Cuentapropista", "href"=>"PERFIL PROFESION Cuentapropista"],
+			["caption"=>"Estudiante", "href"=>"PERFIL PROFESION Estudiante"],
+			["caption"=>"Ama de casa", "href"=>"PERFIL PROFESION Ama de casa"],
+			["caption"=>"Desempleado", "href"=>"PERFIL PROFESION Desempleado"],
+		]);
+
+		// province
+		$options->province = json_encode([
+			["caption"=>"Pinar del Rio", "href"=>"PERFIL PROVINCIA PINAR_DEL_RIO"],
+			["caption"=>"La Habana", "href"=>"PERFIL PROVINCIA LA_HABANA"],
+			["caption"=>"Artemisa", "href"=>"PERFIL PROVINCIA ARTEMISA"],
+			["caption"=>"Mayabeque", "href"=>"PERFIL PROVINCIA MAYABEQUE"],
+			["caption"=>"Matanzas", "href"=>"PERFIL PROVINCIA MATANZAS"],
+			["caption"=>"Villa Clara", "href"=>"PERFIL PROVINCIA VILLA CLARA"],
+			["caption"=>"Cienfuegos", "href"=>"PERFIL PROVINCIA CIENFUEGOS"],
+			["caption"=>"Sancti Spiritus", "href"=>"PERFIL PROVINCIA SANCTI_SPIRITUS"],
+			["caption"=>"Ciego de Avila", "href"=>"PERFIL PROVINCIA CIEGO_DE_AVILA"],
+			["caption"=>"Camaguey", "href"=>"PERFIL PROVINCIA CAMAGUEY"],
+			["caption"=>"Las Tunas", "href"=>"PERFIL PROVINCIA LAS_TUNAS"],
+			["caption"=>"Holguin", "href"=>"PERFIL PROVINCIA HOLGUIN"],
+			["caption"=>"Granma", "href"=>"PERFIL PROVINCIA GRANMA"],
+			["caption"=>"Santiago de Cuba", "href"=>"PERFIL PROVINCIA SANTIAGO_DE_CUBA"],
+			["caption"=>"Guantanamo", "href"=>"PERFIL PROVINCIA GUANTANAMO"],
+			["caption"=>"Isla de la Juventud", "href"=>"PERFIL PROVINCIA ISLA_DE_LA_JUVENTUD"]
+		]);
+
+		// religion
+		$options->religion = json_encode([
+			["caption"=>"Cristianismo", "href"=>"PERFIL RELIGION CRISTIANISMO"],
+			["caption"=>"Catolicismo", "href"=>"PERFIL RELIGION CATOLICISMO"],
+			["caption"=>"Yoruba", "href"=>"PERFIL RELIGION YORUBA"],
+			["caption"=>"Protestante", "href"=>"PERFIL RELIGION PROTESTANTE"],
+			["caption"=>"Santero", "href"=>"PERFIL RELIGION SANTERO"],
+			["caption"=>"Abakua", "href"=>"PERFIL RELIGION ABAKUA"],
+			["caption"=>"Budismo", "href"=>"PERFIL RELIGION BUDISMO"],
+			["caption"=>"Islam", "href"=>"PERFIL RELIGION ISLAM"],
+			["caption"=>"Ateismo", "href"=>"PERFIL RELIGION ATEISMO"],
+			["caption"=>"Agnosticismo", "href"=>"PERFIL RELIGION AGNOSTICISMO"],
+			["caption"=>"Secularismo", "href"=>"PERFIL RELIGION SECULARISMO"],
+			["caption"=>"Otra", "href"=>"PERFIL RELIGION OTRA"]
+		]);
+
+		// prepare response for the view
+		$response = new Response();
+		$response->setResponseSubject('Edite su perfil');
+		$response->createFromTemplate('profile.tpl', ["person"=>$person, "options"=>$options]);
+		return $response;
+	}
+
+	/**
 	 * Subservice Responder
 	 *
 	 * @param Request $request
@@ -47,11 +156,10 @@ class Encuesta extends Service
 	 */
 	public function _responder(Request $request)
 	{
-		$connection = new Connection();
 		$answerID = intval(trim($request->query));
 
 		// check if the answer is valid
-		$answer = $connection->query("
+		$answer = Connection::query("
 			SELECT *,
 				(SELECT survey
 				 FROM _survey_question
@@ -65,7 +173,7 @@ class Encuesta extends Service
 		$questionID = $answer[0]->question;
 
 		// check if person hasen't responded that question already
-		$r = $connection->query("
+		$r = Connection::query("
 			SELECT *
 			FROM _survey_answer_choosen
 			WHERE email = '{$request->email}'
@@ -76,21 +184,21 @@ class Encuesta extends Service
 		} 
 
 		// insert the answer into the database
-		$connection->query("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$resID,$questionID,$answerID)");
+		Connection::query("INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES ('{$request->email}',$resID,$questionID,$answerID)");
 
 		// if that question answered the whole survey, add §
 		if ($this->isSurveyComplete($request->email, $resID))
 		{
 			// get the credit to add
-			$res = $connection->query("SELECT title,value FROM _survey WHERE id='$resID'");
+			$res = Connection::query("SELECT title,value FROM _survey WHERE id='$resID'");
 			$credit = $res[0]->value;
 			$title = $res[0]->title;
 
 			// add credit to the user account
-			$connection->query("UPDATE person SET credit=credit+$credit WHERE email='{$request->email}'");
+			Connection::query("UPDATE person SET credit=credit+$credit WHERE email='{$request->email}'");
 
 			// add the counter of times the survey was answered
-			$connection->query("UPDATE _survey SET answers=answers+1 WHERE id='$resID'");
+			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='$resID'");
 		}
 
 		return new Response();
@@ -106,8 +214,7 @@ class Encuesta extends Service
 	 * */
 	private function isSurveyComplete($email, $resID)
 	{
-		$connection = new Connection();
-		$res = $connection->query("
+		$res = Connection::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$resID') A,
 			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$resID' AND email='$email') B");
@@ -173,9 +280,8 @@ class Encuesta extends Service
 			WHERE responses = total";
 
 		// run both queries
-		$connection = new Connection();
-		$ress = $connection->query($opened);
-		$finished = $connection->query($finished);
+		$ress = Connection::query($opened);
+		$finished = Connection::query($finished);
 
 		// send response to the user
 		$response = new Response();
@@ -257,7 +363,7 @@ class Encuesta extends Service
 	 */
 	private function getSurveyDetails ($email, $res_id)
 	{
-		$sql = "
+		return Connection::query("
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
@@ -279,9 +385,6 @@ class Encuesta extends Service
 			ON _survey_question.survey = _survey.id
 			AND _survey_answer.question = _survey_question.id
 			WHERE _survey.id = $res_id
-			ORDER BY _survey_question.id, _survey_answer.id";
-
-		$connection = new Connection();
-		return $connection->query($sql);
+			ORDER BY _survey_question.id, _survey_answer.id");
 	}
 }
