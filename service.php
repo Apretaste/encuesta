@@ -53,98 +53,10 @@ class Encuesta extends Service
 		if ($person->gender == 'M') $person->gender = "Masculino";
 		if ($person->gender == 'F') $person->gender = "Femenino";
 
-		// create date for the selects
-		$options = new stdClass();
-
-		// gender
-		$options->gender = json_encode([
-			["caption"=>"Masculino", "href"=>"PERFIL SEXO MASCULINO"],
-			["caption"=>"Femenino", "href"=>"PERFIL SEXO FEMENINO"]
-		]);
-
-		// sexual orientation
-		$options->sexual_orientation = json_encode([
-			["caption"=>"Hetero", "href"=>"PERFIL ORIENTACION HETERO"],
-			["caption"=>"Gay", "href"=>"PERFIL ORIENTACION HOMO"],
-			["caption"=>"Bi", "href"=>"PERFIL ORIENTACION BI"]
-		]);
-
-		// skin
-		$options->skin = json_encode([
-			["caption"=>"Blanco", "href"=>"PERFIL PIEL BLANCO"],
-			["caption"=>"Negro", "href"=>"PERFIL PIEL NEGRO"],
-			["caption"=>"Mestizo", "href"=>"PERFIL PIEL MESTIZO"],
-			["caption"=>"Otro", "href"=>"PERFIL PIEL OTRO"]
-		]);
-
-		// marital status
-		$options->marital_status = json_encode([
-			["caption"=>"Soltero", "href"=>"PERFIL ESTADO SOLTERO"],
-			["caption"=>"Saliendo", "href"=>"PERFIL ESTADO SALIENDO"],
-			["caption"=>"Comprometido", "href"=>"PERFIL ESTADO COMPROMETIDO"],
-			["caption"=>"Casado", "href"=>"PERFIL ESTADO CASADO"]
-		]);
-
-		// highest school level
-		$options->highest_school_level = json_encode([
-			["caption"=>"Primario", "href"=>"PERFIL NIVEL PRIMARIO"],
-			["caption"=>"Secundario", "href"=>"PERFIL NIVEL SECUNDARIO"],
-			["caption"=>"Tecnico", "href"=>"PERFIL NIVEl TECNICO"],
-			["caption"=>"Universitario", "href"=>"PERFIL NIVEl UNIVERSITARIO"],
-			["caption"=>"Postgraduado", "href"=>"PERFIL NIVEl POSTGRADUADO"],
-			["caption"=>"Doctorado", "href"=>"PERFIL NIVEl DOCTORADO"],
-			["caption"=>"Otro", "href"=>"PERFIL NIVEl OTRO"]
-		]);
-
-		// occupation
-		$options->occupation = json_encode([
-			["caption"=>"Trabajador estatal", "href"=>"PERFIL PROFESION Trabajador estatal"],
-			["caption"=>"Cuentapropista", "href"=>"PERFIL PROFESION Cuentapropista"],
-			["caption"=>"Estudiante", "href"=>"PERFIL PROFESION Estudiante"],
-			["caption"=>"Ama de casa", "href"=>"PERFIL PROFESION Ama de casa"],
-			["caption"=>"Desempleado", "href"=>"PERFIL PROFESION Desempleado"],
-		]);
-
-		// province
-		$options->province = json_encode([
-			["caption"=>"Pinar del Rio", "href"=>"PERFIL PROVINCIA PINAR_DEL_RIO"],
-			["caption"=>"La Habana", "href"=>"PERFIL PROVINCIA LA_HABANA"],
-			["caption"=>"Artemisa", "href"=>"PERFIL PROVINCIA ARTEMISA"],
-			["caption"=>"Mayabeque", "href"=>"PERFIL PROVINCIA MAYABEQUE"],
-			["caption"=>"Matanzas", "href"=>"PERFIL PROVINCIA MATANZAS"],
-			["caption"=>"Villa Clara", "href"=>"PERFIL PROVINCIA VILLA CLARA"],
-			["caption"=>"Cienfuegos", "href"=>"PERFIL PROVINCIA CIENFUEGOS"],
-			["caption"=>"Sancti Spiritus", "href"=>"PERFIL PROVINCIA SANCTI_SPIRITUS"],
-			["caption"=>"Ciego de Avila", "href"=>"PERFIL PROVINCIA CIEGO_DE_AVILA"],
-			["caption"=>"Camaguey", "href"=>"PERFIL PROVINCIA CAMAGUEY"],
-			["caption"=>"Las Tunas", "href"=>"PERFIL PROVINCIA LAS_TUNAS"],
-			["caption"=>"Holguin", "href"=>"PERFIL PROVINCIA HOLGUIN"],
-			["caption"=>"Granma", "href"=>"PERFIL PROVINCIA GRANMA"],
-			["caption"=>"Santiago de Cuba", "href"=>"PERFIL PROVINCIA SANTIAGO_DE_CUBA"],
-			["caption"=>"Guantanamo", "href"=>"PERFIL PROVINCIA GUANTANAMO"],
-			["caption"=>"Isla de la Juventud", "href"=>"PERFIL PROVINCIA ISLA_DE_LA_JUVENTUD"]
-		]);
-
-		// religion
-		$options->religion = json_encode([
-			["caption"=>"Cristianismo", "href"=>"PERFIL RELIGION CRISTIANISMO"],
-			["caption"=>"Catolicismo", "href"=>"PERFIL RELIGION CATOLICISMO"],
-			["caption"=>"Yoruba", "href"=>"PERFIL RELIGION YORUBA"],
-			["caption"=>"Protestante", "href"=>"PERFIL RELIGION PROTESTANTE"],
-			["caption"=>"Santero", "href"=>"PERFIL RELIGION SANTERO"],
-			["caption"=>"Abakua", "href"=>"PERFIL RELIGION ABAKUA"],
-			["caption"=>"Budismo", "href"=>"PERFIL RELIGION BUDISMO"],
-			["caption"=>"Islam", "href"=>"PERFIL RELIGION ISLAM"],
-			["caption"=>"Ateismo", "href"=>"PERFIL RELIGION ATEISMO"],
-			["caption"=>"Agnosticismo", "href"=>"PERFIL RELIGION AGNOSTICISMO"],
-			["caption"=>"Secularismo", "href"=>"PERFIL RELIGION SECULARISMO"],
-			["caption"=>"Otra", "href"=>"PERFIL RELIGION OTRA"]
-		]);
-
 		// prepare response for the view
 		$response = new Response();
 		$response->setResponseSubject('Edite su perfil');
-		$response->createFromTemplate('profile.tpl', ["person"=>$person, "options"=>$options]);
+		$response->createFromTemplate('profile.tpl', ["person"=>$person]);
 		return $response;
 	}
 
