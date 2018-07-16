@@ -83,6 +83,9 @@ class Encuesta extends Service
 
 		$resID = $answer[0]->survey_id;
 		$questionID = $answer[0]->question;
+		$survey=Connection::query("SELECT * FROM _survey WHERE id=$resID AND active=1");
+
+		if (!isset($survey[0])) return new Response();
 
 		// check if person hasen't responded that question already
 		$r = Connection::query("
