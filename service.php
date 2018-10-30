@@ -53,6 +53,9 @@ class Encuesta extends Service
 		if ($person->gender == 'M') $person->gender = "Masculino";
 		if ($person->gender == 'F') $person->gender = "Femenino";
 
+		// get the list of years for the age
+		$person->years = implode(",", array_reverse(range(date('Y')-90, date('Y')-10)));
+
 		// prepare response for the view
 		$response = new Response();
 		$response->setResponseSubject('Edite su perfil');
