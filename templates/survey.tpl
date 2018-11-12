@@ -19,26 +19,27 @@
 {space5}
 
 <table width="100%" cellspacing="0">
-{foreach from=$survey->questions item=question}
-<tr {if $question@iteration is even}bgcolor="#F2F2F2"{/if}>
-	<td valign="top" width="1">{space5}{$question@iteration})</td>
-	<td class="answer">
-		<b>{$question->title}</b>
-		{space5}
-		<div id="q{$question@iteration}">
-			{foreach item=answer from=$question->answers}
-				{if $question->completed}
-					{if $answer->choosen}
-						<small><span class="green">&#10004;</span> {$answer->title}</small>
-					{/if}
-				{else}
-					<li>{button class="empty" href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" wait="false" callback="pick:q{$question@iteration}:{$answer->title}"}</li>
-				{/if}
-			{/foreach}
-		</div>
-	</td>
-</tr>
-{/foreach}
+	{foreach from=$survey->questions item=question}
+		<tr {if $question@iteration is even}bgcolor="#F2F2F2"{/if}>
+			<td valign="top" width="1" class="answer">
+				{$question@iteration})
+			</td>
+			<td class="answer">
+				<b>{$question->title}</b>
+				<ul id="q{$question@iteration}" style="list-style-position:outside; margin-left:-2em;">
+					{foreach item=answer from=$question->answers}
+						{if $question->completed}
+							{if $answer->choosen}
+								<small><span class="green">&#10004;</span> {$answer->title}</small>
+							{/if}
+						{else}
+							<li>{button class="list" href="ENCUESTA RESPONDER {$answer->id}" caption="{$answer->title}" wait="false" callback="pick:q{$question@iteration}:{$answer->title}"}</li>
+						{/if}
+					{/foreach}
+				</ul>
+			</td>
+		</tr>
+	{/foreach}
 </table>
 
 {space15}
@@ -54,6 +55,7 @@
 <style>
 	.answer{ padding: 15px 0px; }
 	.green { color: green; }
+	.list{ text-align:left !important; display:inline !important; }
 </style>
 
 <script type="text/javascript">
