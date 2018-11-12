@@ -53,6 +53,7 @@
 </center>
 
 <style>
+	li{ margin-bottom: 10px; }
 	.answer{ padding: 15px 0px; }
 	.green { color: green; }
 	.list{ text-align:left !important; display:inline !important; }
