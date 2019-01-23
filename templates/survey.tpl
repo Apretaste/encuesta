@@ -8,7 +8,7 @@
 	<table width="100%" cellspacing="0" cellpadding="15">
 		<tr>
 			<td bgcolor="yellow" align="center">
-				<b>Usted ya respondi&oacute; esta encuesta, y como agradecimiento se le agregaron §{$survey->value|number_format:2} a su saldo. Muchas gracias por su participaci&oacute;n.</b>
+				<b>Usted ya respondi&oacute; esta encuesta, y como agradecimiento se le agregaron §{$survey->value|number_format:2} a su credito. Muchas gracias por su participaci&oacute;n.</b>
 			</td>
 		</tr>
 	</table>
