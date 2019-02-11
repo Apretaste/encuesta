@@ -14,14 +14,10 @@ class Encuesta extends Service
 		$person = Utils::getPerson($request->email);
 		if(
 			$person->age < 5 || $person->age > 130 ||
-			empty($person->sexual_orientation) ||
 			empty($person->gender) ||
 			empty($person->province) ||
 			empty($person->skin) ||
-			empty($person->marital_status) ||
-			empty($person->highest_school_level) ||
-			empty($person->occupation) ||
-			empty($person->religion)
+			empty($person->highest_school_level)
 		) return $this->_perfil($request);
 
 		// get the ID of the survey to open
