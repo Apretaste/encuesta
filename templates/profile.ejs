@@ -1,0 +1,66 @@
+<div class="row">
+	<div class="input-field col s12">
+		<h1>Datos estadísticos</h1>
+		<p>Necesitamos algunos datos básicos suyos para sacar estadísticas y analizar los resultados. Las encuestas son anónimas y su información nunca se compartirá con terceros.</p>
+	</div>
+
+	<!-- GENDER -->
+	<div class="input-field col s12 m6">
+		<select id="gender" class="validate">
+			<option value=""></option>
+			<option value="M" <%if(profile.gender=='M'){%>selected<%}%>>Hombre</option>
+			<option value="F" <%if(profile.gender=='F'){%>selected<%}%>>Mujer</option>
+		</select>
+		<label for="gender">¿Qué eres?</label>
+	</div>
+
+	<!-- BIRTH YEAR -->
+	<div class="input-field col s12 m6">
+		<select id="year_of_birth" class="validate">
+			<option value=""></option>
+			<% getYears().forEach(function(year) { %>
+				<option value="<%= year %>" <%if(profile.year_of_birth==year){%>selected<%}%>><%= year %></option>
+			<% }); %>
+		</select>
+		<label for="year_of_birth">¿Que año nacistes?</label>
+	</div>
+
+	<!-- SKIN -->
+	<% var skin = ["BLANCO","NEGRO","MESTIZO","OTRO"] %>
+	<div class="input-field col s12 m6">
+		<select id="skin" class="validate">
+			<option value=""></option>
+			<% skin.forEach(function(val) { %>
+				<option value="<%= val %>" <%if(val==profile.skin){%>selected<%}%>><%= val.firstUpper() %></option>
+			<% }); %>
+		</select>
+		<label for="skin">¿De que color es tu piel?</label>
+	</div>
+
+	<!-- HIGHEST SCHOOL LEVEL-->
+	<% var highest_school_level = ["PRIMARIO","SECUNDARIO","TECNICO","UNIVERSITARIO","POSTGRADUADO","DOCTORADO","OTRO"] %>
+	<div class="input-field col s12 m6">
+		<select id="highest_school_level" class="validate">
+			<option value=""></option>
+			<% highest_school_level.forEach(function(val) { %>
+				<option value="<%= val %>" <%if(val==profile.highest_school_level){%>selected<%}%>><%= val.firstUpper() %></option>
+			<% }); %>
+		</select>
+		<label for="highest_school_level">¿Cual es su nivel escolar?</label>
+	</div>
+
+	<!-- PROVINCE-->
+	<% var province = ["PINAR_DEL_RIO","LA_HABANA","ARTEMISA","MAYABEQUE","MATANZAS","VILLA_CLARA","CIENFUEGOS","SANCTI_SPIRITUS","CIEGO_DE_AVILA","CAMAGUEY","LAS_TUNAS","HOLGUIN","GRANMA","SANTIAGO_DE_CUBA","GUANTANAMO","ISLA_DE_LA_JUVENTUD"] %>
+	<div class="input-field province-div col s12 m6">
+		<select id="province" class="validate">
+			<option value=""></option>
+			<% province.forEach(function(val) { %>
+				<option value="<%= val %>" <%if(val==profile.province){%>selected<%}%>><%= val.replaceAll('_', ' ').firstUpper() %></option>
+			<% }); %>
+		</select>
+		<label for="province">¿En que provincia vives?</label>
+	</div>
+</div>
+
+<!-- SAVE BUTTON -->
+<a class="btn-floating btn-large waves-effect waves-light floating-action" href="#!" onclick="submitProfileData()"><i class="material-icons">save</i></a>

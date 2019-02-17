@@ -1,0 +1,38 @@
+<!-- LIST OF QUESTIONS -->
+<div id="list" class="row">
+	<div class="col s12">
+		<h1><%= survey.title %></h1>
+
+		<% if(survey.details){ %>
+			<p><%= survey.details %></p>
+		<% } %>
+
+		<% survey.questions.forEach(function(question){ %>
+			<h2><%= question.title %></h2>
+			<div id="<%= question.id %>" class="question">
+				<% question.answers.forEach(function(answer){ %>
+					<% var checked = answer.choosen ? 'checked' : '' %>
+					<p>
+						<label>
+							<input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
+							<span><%= answer.title %></span>
+						</label>
+					</p>
+				<% }) %>
+			</div>
+		<% }) %>
+	</div>
+
+	<!-- SAVE BUTTON -->
+	<a class="btn-floating btn-large waves-effect waves-light floating-action" href="#!" onclick="submitSurvey()"><i class="material-icons">send</i></a>
+</div>
+
+<!-- COMPLETION MESSAGE -->
+<div id="msg" class="row hidden">
+	<div class="col s12 center">
+		<h1>¡Chócala! Ya respondió esta encuesta</h1>
+		<i class="material-icons large">pan_tool</i>
+		<p>Usted ya respondió esta encuesta, y como agradecimiento le agregamos §<%= survey.value %> a su crédito. Muchas gracias por su participación.</p>
+		<a class="btn waves-effect waves-light" href="#!" onclick="apretaste.send({command:'ENCUESTA'})">Otras encuestas</a>
+	</div>
+</div>

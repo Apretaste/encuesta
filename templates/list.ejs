@@ -1,0 +1,28 @@
+<div class="row">
+	<div class="col s12">
+		<h1>Encuestas activas</h1>
+		<table class="striped">
+			<thead>
+				<tr>
+					<th>Título</th>
+					<th>Hecho</th>
+					<th>Valor</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% surveys.forEach(function(item){ %>
+					<tr>
+						<td>
+							<a href="#!" onclick="apretaste.send({command:'ENCUESTA VER',data:{'id':'<%= item.survey %>'}})"><%= item.title %></a><br/>
+							<small>Vence el <%= formatDate(item.deadline) %></small>
+						</td>
+						<td class="center-align"><%= Math.floor(item.completion) %>%</td>
+						<td class="center-align">§<%= item.value %></td>
+					</tr>
+				<% }) %>
+			</tbody>
+		</table>
+
+		<p>Las encuestas son anónimas y seguras. Nadie leerá tu selección.</p>
+	</div>
+</div>
