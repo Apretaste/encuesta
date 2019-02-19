@@ -1,7 +1,7 @@
 {
-	"name": "piropazo",
+	"name": "encuesta",
 	"version": "1",
-	"description": "Le ayuda en la ardua busqueda de su media naranja. Encuentra personas afines con usted tomando como referencia los datos de su perfil.",
+	"description": "Permite responder encuestas públicas y obtener créditos de Apretaste.",
 	"category": "social",
 	"creator": "salvi@apretaste.org",
 	"listed": true
