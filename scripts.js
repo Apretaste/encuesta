@@ -10,8 +10,8 @@ $(document).ready(function(){
 // FUCTIONS FOR THE SERVICE
 //
 
-// formats a date
-function formatDate(dateStr) {
+// formats a date and time
+function formatDateTime(dateStr) {
 	var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 	var date = new Date(dateStr);
 	var month = date.getMonth();
@@ -19,8 +19,16 @@ function formatDate(dateStr) {
 	var hour = (date.getHours() < 12) ? date.getHours() : date.getHours() - 12;
 	var minutes = date.getMinutes();
 	var amOrPm = (date.getHours() < 12) ? "am" : "pm";
-
 	return day + ' de ' + months[month] + ' a las ' + hour + ':' + minutes + amOrPm;
+}
+
+// formats a date and time
+function formatDate(dateStr) {
+	var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+	var date = new Date(dateStr);
+	var month = date.getMonth();
+	var day = date.getDate().toString().padStart(2, '0');
+	return day + ' de ' + months[month];
 }
 
 // get list of years fort the age

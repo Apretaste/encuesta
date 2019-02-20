@@ -14,7 +14,7 @@
 					<tr>
 						<td>
 							<a href="#!" onclick="apretaste.send({command:'ENCUESTA VER',data:{'id':'<%= item.survey %>'}})"><%= item.title %></a><br/>
-							<small>Vence el <%= formatDate(item.deadline) %></small>
+							<small>Vence el <%= formatDateTime(item.deadline) %></small>
 						</td>
 						<td class="center-align"><%= Math.floor(item.completion) %>%</td>
 						<td class="center-align">§<%= item.value %></td>
@@ -23,6 +23,6 @@
 			</tbody>
 		</table>
 
-		<p>Las encuestas son anónimas y seguras. Nadie leerá tu selección.</p>
+		<p><small>Las encuestas son anónimas y seguras. Nadie leerá tu selección. Puede revisar las <a href="#!" onclick="apretaste.send({command:'ENCUESTA TERMINADAS'})">encuestas terminadas</a> por usted.</small></p>
 	</div>
 </div>

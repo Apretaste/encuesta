@@ -3,7 +3,7 @@
 class Service
 {
 	/**
-	 * Get the list of surveys opened
+	 * Main service
 	 *
 	 * @author salvipascual
 	 * @param Request
@@ -11,16 +11,7 @@ class Service
 	 */
 	public function _main(Request $request, Response $response)
 	{
-		// ensure your profile is completed
-		if(
-			$request->person->age < 5 || $request->person->age > 130 ||
-			empty($request->person->gender) ||
-			empty($request->person->province) ||
-			empty($request->person->skin) ||
-			empty($request->person->highest_school_level)
-		) return $this->_perfil($request);
-
-		// display the survey
+		// redirect to the list of surveys opened
 		$this->_lista($request, $response);
 	}
 
@@ -38,14 +29,18 @@ class Service
 	}
 
 	/**
-	 * Send the default response
+	 * Get the list of surveys opened
 	 * 
 	 * @author salvipascual
-	 * @param Request $request, Response $response
-	 * @return Response
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _lista(Request $request, Response $response)
 	{
+		// ensure your profile is completed
+		if($this->isProfileIncomplete($request->person)) 
+			return $this->_perfil($request, $response);
+
 		// subqueries for the opened surveys
 		$sql_survey_datails = "
 			SELECT
@@ -96,29 +91,59 @@ class Service
 			]);
 		}
 
-		//get the list of surveys answered
-		// $finished = "
-		// 	SELECT email, responses, total, C.title, C.value, A.inserted
-		// 	FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->person->email}' GROUP BY survey) A
-		// 	LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
-		// 	ON A.survey = B.survey
-		// 	LEFT JOIN (SELECT * FROM _survey) C
-		// 	ON A.survey = C.id
-		// 	WHERE responses = total";
-
 		// send response to the user
 		$response->setTemplate('list.ejs', ['surveys'=>$surveys]);
 	}
 
 	/**
-	 * Displat a survey to answer it
+	 * Display a list of previous surveys
 	 * 
 	 * @author salvipascual
-	 * @param Request $request, Response $response
-	 * @return Response
+	 * @param Request $request
+	 * @param Response $response
+	 */
+	public function _terminadas(Request $request, Response $response)
+	{
+		// ensure your profile is completed
+		if($this->isProfileIncomplete($request->person)) 
+			return $this->_perfil($request, $response);
+
+		//get the list of surveys answered
+		$completed = Connection::query("
+			SELECT email, responses, total, C.title, C.value, A.inserted
+			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->person->email}' GROUP BY survey) A
+			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
+			ON A.survey = B.survey
+			LEFT JOIN (SELECT * FROM _survey) C
+			ON A.survey = C.id
+			WHERE responses = total");
+
+		// message if there are not opened surveys
+		if(empty($completed)) {
+			return $response->setTemplate('message.ejs', [
+				"header"=>"No ha completado encuestas",
+				"icon"=>"sentiment_neutral",
+				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista."
+			]);
+		}
+
+		// send response to the user
+		$response->setTemplate('completed.ejs', ['surveys'=>$completed]);
+	}
+
+	/**
+	 * Display a survey to answer it
+	 * 
+	 * @author salvipascual
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _ver(Request $request, Response $response)
 	{
+		// ensure your profile is completed
+		if($this->isProfileIncomplete($request->person)) 
+			return $this->_perfil($request, $response);
+
 		// get the survey details
 		$res = Connection::query("
 			SELECT
@@ -195,7 +220,7 @@ class Service
 	}
 
 	/**
-	 * Subservice Responder
+	 * Respond a survey
 	 *
 	 * @author salvipascual
 	 * @param Request
@@ -203,6 +228,9 @@ class Service
 	 */
 	public function _responder(Request $request, Response $response)
 	{
+		// ensure your profile is completed
+		if($this->isProfileIncomplete($request->person)) return false;
+
 		// do not continue if data is not passed
 		if(empty($request->input->data->answers)) return false;
 
@@ -261,5 +289,20 @@ class Service
 			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND email='$email') B");
 
 		return $res[0]->total === $res[0]->answers;
+	}
+
+	/**
+	 * Check if the profile is completed or not
+	 *
+	 * @author salvipascual
+	 * @param Person $person
+	 * @return Boolean, true if profile is incompleted
+	 * */
+	private function isProfileIncomplete($person)
+	{
+		return $person->age < 5 || $person->age > 130 ||
+			empty($person->province) ||
+			empty($person->skin) ||
+			empty($person->highest_school_level);
 	}
 }
