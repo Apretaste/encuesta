@@ -22,7 +22,7 @@
 				<option value="<%= year %>" <%if(profile.year_of_birth==year){%>selected<%}%>><%= year %></option>
 			<% }); %>
 		</select>
-		<label for="year_of_birth">¿Que año nacistes?</label>
+		<label for="year_of_birth">¿Qué año nacistes?</label>
 	</div>
 
 	<!-- SKIN -->
@@ -34,7 +34,7 @@
 				<option value="<%= val %>" <%if(val==profile.skin){%>selected<%}%>><%= val.firstUpper() %></option>
 			<% }); %>
 		</select>
-		<label for="skin">¿De que color es tu piel?</label>
+		<label for="skin">¿Cuál es tu color de piel?</label>
 	</div>
 
 	<!-- HIGHEST SCHOOL LEVEL-->
@@ -46,7 +46,7 @@
 				<option value="<%= val %>" <%if(val==profile.highest_school_level){%>selected<%}%>><%= val.firstUpper() %></option>
 			<% }); %>
 		</select>
-		<label for="highest_school_level">¿Cual es su nivel escolar?</label>
+		<label for="highest_school_level">¿Cuál es su nivel escolar?</label>
 	</div>
 
 	<!-- PROVINCE-->
@@ -58,7 +58,7 @@
 				<option value="<%= val %>" <%if(val==profile.province){%>selected<%}%>><%= val.replaceAll('_', ' ').firstUpper() %></option>
 			<% }); %>
 		</select>
-		<label for="province">¿En que provincia vives?</label>
+		<label for="province">¿En qué provincia vives?</label>
 	</div>
 </div>
 

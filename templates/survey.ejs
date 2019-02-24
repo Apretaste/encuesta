@@ -7,8 +7,8 @@
 			<p><%= survey.details %></p>
 		<% } %>
 
-		<% survey.questions.forEach(function(question){ %>
-			<h2><%= question.title %></h2>
+		<% survey.questions.forEach(function(question, i){ %>
+			<h2><small><%= i+1 %>.</small> <%= question.title %></h2>
 			<div id="<%= question.id %>" class="question">
 				<% question.answers.forEach(function(answer){ %>
 					<% var checked = answer.choosen ? 'checked' : '' %>

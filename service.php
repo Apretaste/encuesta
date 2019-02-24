@@ -87,7 +87,8 @@ class Service
 			return $response->setTemplate('message.ejs', [
 				"header"=>"No hay encuestas",
 				"icon"=>"sentiment_very_dissatisfied",
-				"text" => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente."
+				"text" => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
+				"button" => ["href"=>"ENCUESTA TERMINADAS", "caption"=>"Ver Terminadas"]
 			]);
 		}
 
@@ -123,7 +124,8 @@ class Service
 			return $response->setTemplate('message.ejs', [
 				"header"=>"No ha completado encuestas",
 				"icon"=>"sentiment_neutral",
-				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista."
+				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
+				"button" => ["href"=>"ENCUESTA", "caption"=>"Ver Encuestas"]
 			]);
 		}
 
@@ -177,7 +179,8 @@ class Service
 			return $response->setTemplate('message.ejs', [
 				"header"=>"¡Chócala! Ya respondió esta encuesta",
 				"icon"=>"pan_tool",
-				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación."
+				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
+				"button" => ["href"=>"ENCUESTA", "caption"=>"Ver Encuestas"]
 			]);
 		}
 
