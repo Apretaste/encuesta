@@ -21,8 +21,8 @@
                     <% question.answers.forEach(function(answer){ %>
                     <% var checked = answer.choosen ? 'checked' : '' %>
                     <tr>
-                        <td align="center" width="3%">
-                            <label><input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/></label>
+                        <td align="center" width="5%">
+                            <input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
                         </td>
                         <td align="justify">
                             <%= answer.title %>
