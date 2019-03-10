@@ -17,17 +17,19 @@
                 <h2>
                     <small><%= i + 1 %>.</small> <%= question.title %></h2>
                 <div id="<%= question.id %>" class="question">
+                    <table>
                     <% question.answers.forEach(function(answer){ %>
                     <% var checked = answer.choosen ? 'checked' : '' %>
-                    <div class="row">
-                        <div class="col s12">
-                            <label>
-                                <input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
-                                <span><%= answer.title %></span>
-                            </label>
-                        </div>
-                    </div>
+                    <tr>
+                        <td align="center">
+                            <input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
+                        </td>
+                        <td align="justify">
+                            <%= answer.title %>
+                        </td>
+                    </tr>
                     <% }) %>
+                    </table>
                 </div>
             </div>
         </div>
