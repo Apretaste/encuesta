@@ -22,10 +22,10 @@
                     <% var checked = answer.choosen ? 'checked' : '' %>
                     <tr>
                         <td align="center" width="7%" valign="middle">
-                            <input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
-                        </td>
-                        <td align="justify">
-                            <%= answer.title %>
+                            <label>
+                                <input class="with-gap" name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
+                                <span><%= answer.title %></span>
+                            </label>
                         </td>
                     </tr>
                     <% }) %>
