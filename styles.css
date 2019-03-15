@@ -2,8 +2,9 @@
 	display: none;
 }
 
+/*
 [type="radio"]:not(:checked), [type="radio"]:checked
 {
-	opacity: 1;
+	opacity: 0;
 	position: relative;
-}
+}*/
