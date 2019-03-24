@@ -130,6 +130,7 @@ class Service
 		}
 
 		// send response to the user
+    $response->setCache(12*60*60);
 		$response->setTemplate('completed.ejs', ['surveys'=>$completed]);
 	}
 
