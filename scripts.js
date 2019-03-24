@@ -28,7 +28,7 @@ function formatDate(dateStr) {
 	var date = new Date(dateStr);
 	var month = date.getMonth();
 	var day = date.getDate().toString().padStart(2, '0');
-	return day + ' de ' + months[month];
+	return day + ' de ' + months[month] + ' del ' + date.getFullYear();
 }
 
 // get list of years fort the age
