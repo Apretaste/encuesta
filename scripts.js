@@ -18,6 +18,7 @@ function formatDateTime(dateStr) {
 	var day = date.getDate().toString().padStart(2, '0');
 	var hour = (date.getHours() < 12) ? date.getHours() : date.getHours() - 12;
 	var minutes = date.getMinutes();
+	if (minutes < 10) minutes = '0' + minutes;
 	var amOrPm = (date.getHours() < 12) ? "am" : "pm";
 	return day + ' de ' + months[month] + ' a las ' + hour + ':' + minutes + amOrPm;
 }
