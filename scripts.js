@@ -94,11 +94,16 @@ function submitSurvey() {
 		}
 	});
 
-	if(answers.length) {
-		// send information to the backend
+  M.toast({html: 'Has dado ' + answers.length + ' respuestas...'});
+
+  if(answers.length) {
+
+    M.toast({html: 'Enviando su encuesta...'});
+
+    // send information to the backend
 		apretaste.send({
 			"command": "ENCUESTA RESPONDER",
-			"data": {answers:answers},
+			"data": {answers: answers},
 			"redirect": false
 		});
 
