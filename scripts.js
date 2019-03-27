@@ -94,8 +94,6 @@ function submitSurvey() {
 		}
 	});
 
-  M.toast({html: 'Has dado ' + answers.length + ' respuestas...'});
-
   if(answers.length) {
 
     M.toast({html: 'Enviando su encuesta...'});
