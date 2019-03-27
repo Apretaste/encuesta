@@ -102,12 +102,14 @@ function submitSurvey() {
 
     // send information to the backend
 		apretaste.send({
-			"command": "ENCUESTA RESPONDER",
-			"data": {answers: answers},
-			"redirect": false,
+			command: "ENCUESTA RESPONDER",
+			data: {
+				answers: answers
+			},
+			redirect: false,
 			callback: {
         name: "surveySent",
-        data: {}
+        data: '{}'
       }
 		});
 	}
