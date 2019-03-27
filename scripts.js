@@ -104,13 +104,21 @@ function submitSurvey() {
 		apretaste.send({
 			"command": "ENCUESTA RESPONDER",
 			"data": {answers: answers},
-			"redirect": false
+			"redirect": false,
+			callback: {
+        name: "surveySent",
+        data: {}
+      }
 		});
-
-		// display the DONE message
-		$('#list').hide();
-		$('#msg').show();
 	}
+}
+
+function surveySent(data){
+  M.toast({html: 'Encuesta enviada satisfactoriamente'});
+
+  // display the DONE message
+  $('#list').hide();
+  $('#msg').show();
 }
 
 //
