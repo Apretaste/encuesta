@@ -103,6 +103,7 @@ function submitSurvey() {
 
 		// display the DONE message
 		$('#list').hide();
+		$('#btn').hide();
 		$('#msg').show();
 	}
 }
