@@ -1,25 +1,38 @@
 <!-- LIST OF QUESTIONS -->
 <div id="list" class="row">
 	<div class="col s12">
-		<h1><%= survey.title %></h1>
+		<div class="row">
+			<div class="col s12">
+				<h1><%= survey.title %></h1>
 
-		<% if(survey.details){ %>
-			<p><%= survey.details %></p>
-		<% } %>
+				<% if(survey.details){ %>
+				<p><%= survey.details %></p>
+				<% } %>
+			</div>
+		</div>
 
 		<% survey.questions.forEach(function(question, i){ %>
-			<h2><small><%= i+1 %>.</small> <%= question.title %></h2>
-			<div id="<%= question.id %>" class="question">
-				<% question.answers.forEach(function(answer){ %>
+		<div class="row">
+			<div class="col s12">
+				<h2>
+					<small><%= i + 1 %>.</small> <%= question.title %></h2>
+				<div id="<%= question.id %>" class="question">
+					<table>
+					<% question.answers.forEach(function(answer){ %>
 					<% var checked = answer.choosen ? 'checked' : '' %>
-					<p>
-						<label>
-							<input name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
-							<span><%= answer.title %></span>
-						</label>
-					</p>
-				<% }) %>
+					<tr>
+						<td align="center" width="7%" valign="middle">
+							<label>
+								<input class="with-gap" name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
+								<span><%= answer.title %></span>
+							</label>
+						</td>
+					</tr>
+					<% }) %>
+					</table>
+				</div>
 			</div>
+		</div>
 		<% }) %>
 	</div>
 </div>
@@ -34,7 +47,9 @@
 	<div class="col s12 center">
 		<h1>¡Chócala! Ya respondió esta encuesta</h1>
 		<i class="material-icons large">pan_tool</i>
-		<p>Usted ya respondió esta encuesta, y como agradecimiento le agregamos §<%= survey.value %> a su crédito. Muchas gracias por su participación.</p>
-		<a class="btn waves-effect waves-light" href="#!" onclick="apretaste.send({command:'ENCUESTA'})">Otras encuestas</a>
+		<p>Usted ya respondió esta encuesta, y como agradecimiento le agregamos §<%= survey.value %> a su crédito.
+			Muchas gracias por su participación.</p>
+		<a class="btn waves-effect waves-light" href="#!" onclick="apretaste.send({command:'ENCUESTA'})">Otras
+			encuestas</a>
 	</div>
 </div>

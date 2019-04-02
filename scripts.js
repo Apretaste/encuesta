@@ -18,6 +18,7 @@ function formatDateTime(dateStr) {
 	var day = date.getDate().toString().padStart(2, '0');
 	var hour = (date.getHours() < 12) ? date.getHours() : date.getHours() - 12;
 	var minutes = date.getMinutes();
+	if (minutes < 10) minutes = '0' + minutes;
 	var amOrPm = (date.getHours() < 12) ? "am" : "pm";
 	return day + ' de ' + months[month] + ' a las ' + hour + ':' + minutes + amOrPm;
 }
@@ -28,7 +29,7 @@ function formatDate(dateStr) {
 	var date = new Date(dateStr);
 	var month = date.getMonth();
 	var day = date.getDate().toString().padStart(2, '0');
-	return day + ' de ' + months[month];
+	return day + ' de ' + months[month] + ' del ' + date.getFullYear();
 }
 
 // get list of years fort the age
@@ -96,9 +97,9 @@ function submitSurvey() {
 	if(answers.length) {
 		// send information to the backend
 		apretaste.send({
-			"command": "ENCUESTA RESPONDER",
-			"data": {answers:answers},
-			"redirect": false
+			command: "ENCUESTA RESPONDER",
+			data: {answers: answers},
+			redirect: false
 		});
 
 		// display the DONE message
