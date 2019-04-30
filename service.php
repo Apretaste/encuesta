@@ -66,7 +66,7 @@ class Service
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
 					) as survey_id
 				FROM _survey_answer_choosen
-				WHERE _survey_answer_choosen.email = '{$request->person->email}'
+				WHERE _survey_answer_choosen.email = '{$request->personPrivate->email}'
 				GROUP BY survey_id
 			) AS subq2
 			WHERE survey_id = subq.survey";
@@ -112,7 +112,7 @@ class Service
 		//get the list of surveys answered
 		$completed = Connection::query("
 			SELECT email, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->person->email}' GROUP BY survey) A
+			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->personPrivate->email}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -161,7 +161,7 @@ class Service
 				_survey_answer.title AS answer_title,
 				(SELECT COUNT(email)
 					FROM _survey_answer_choosen
-					WHERE email = '{$request->person->email}'
+					WHERE email = '{$request->personPrivate->email}'
 					AND answer = _survey_answer.id
 				) AS choosen
 			FROM _survey
@@ -176,7 +176,7 @@ class Service
 		if (empty($res) || ! isset($res[0])) return false;
 
 		// message if the survey was already completed
-		if($this->isSurveyComplete($request->person->email, $res[0]->survey)) {
+		if($this->isSurveyComplete($request->personPrivate->email, $res[0]->survey)) {
 			return $response->setTemplate('message.ejs', [
 				"header"=>"¡Chócala! Ya respondió esta encuesta",
 				"icon"=>"pan_tool",
@@ -251,26 +251,26 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		// do not let surveys be submitted twice
-		if ($this->isSurveyComplete($request->person->email, $survey->id)) return false;
+		if ($this->isSurveyComplete($request->personPrivate->email, $survey->id)) return false;
 
 		// prepare the data to be sent in one large query
 		$values = [];
 		for($i=0; $i<count($request->input->data->answers); $i++) {
 			$questionID = $questions[$i]->question;
 			$answerID = $request->input->data->answers[$i];
-			$values[] = "('{$request->person->email}', {$survey->id}, $questionID, $answerID)";
+			$values[] = "('{$request->personPrivate->email}', {$survey->id}, $questionID, $answerID)";
 		}
 		$values = implode(",", $values);
 
 		// replace all old answers by the new answers in one query
 		Connection::query("
 			START TRANSACTION;
-			DELETE FROM _survey_answer_choosen WHERE email = '{$request->person->email}' AND survey = '{$survey->id}';
+			DELETE FROM _survey_answer_choosen WHERE email = '{$request->personPrivate->email}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES $values;
 			COMMIT;");
 
 		// add § for the user if all questions were completed
-		if ($this->isSurveyComplete($request->person->email, $survey->id)) {
+		if ($this->isSurveyComplete($request->personPrivate->email, $survey->id)) {
 			Connection::query("
 				UPDATE person SET credit=credit+{$survey->value} WHERE id='{$request->person->id}';
 				UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
