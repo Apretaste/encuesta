@@ -66,7 +66,7 @@ class Service
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
 					) as survey_id
 				FROM _survey_answer_choosen
-				WHERE _survey_answer_choosen.email = '{$request->personPrivate->email}'
+				WHERE _survey_answer_choosen.email = '{$request->person->email}'
 				GROUP BY survey_id
 			) AS subq2
 			WHERE survey_id = subq.survey";
@@ -112,7 +112,7 @@ class Service
 		//get the list of surveys answered
 		$completed = Connection::query("
 			SELECT email, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->personPrivate->email}' GROUP BY survey) A
+			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->person->email}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -161,7 +161,7 @@ class Service
 				_survey_answer.title AS answer_title,
 				(SELECT COUNT(email)
 					FROM _survey_answer_choosen
-					WHERE email = '{$request->personPrivate->email}'
+					WHERE email = '{$request->person->email}'
 					AND answer = _survey_answer.id
 				) AS choosen
 			FROM _survey
@@ -176,7 +176,7 @@ class Service
 		if (empty($res) || ! isset($res[0])) return false;
 
 		// message if the survey was already completed
-		if($this->isSurveyComplete($request->personPrivate->email, $res[0]->survey)) {
+		if($this->isSurveyComplete($request->person->email, $res[0]->survey)) {
 			return $response->setTemplate('message.ejs', [
 				"header"=>"¡Chócala! Ya respondió esta encuesta",
 				"icon"=>"pan_tool",
@@ -224,7 +224,7 @@ class Service
 	}
 
 	/**
-	 * Respond a survey
+	 * Responds a survey
 	 *
 	 * @author salvipascual
 	 * @param Request
@@ -239,7 +239,7 @@ class Service
 		if(empty($request->input->data->answers)) return false;
 
 		// get the question IDs for the answers received
-		$answers = implode(",", $request->input->data->answers); 
+		$answers = implode(",", $request->input->data->answers);
 		$questions = Connection::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
@@ -251,29 +251,48 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		// do not let surveys be submitted twice
-		if ($this->isSurveyComplete($request->personPrivate->email, $survey->id)) return false;
+		if ($this->isSurveyComplete($request->person->email, $survey->id)) return false;
 
 		// prepare the data to be sent in one large query
 		$values = [];
 		for($i=0; $i<count($request->input->data->answers); $i++) {
 			$questionID = $questions[$i]->question;
 			$answerID = $request->input->data->answers[$i];
-			$values[] = "('{$request->personPrivate->email}', {$survey->id}, $questionID, $answerID)";
+			$values[] = "('{$request->person->email}', {$survey->id}, $questionID, $answerID)";
 		}
 		$values = implode(",", $values);
 
 		// replace all old answers by the new answers in one query
 		Connection::query("
 			START TRANSACTION;
-			DELETE FROM _survey_answer_choosen WHERE email = '{$request->personPrivate->email}' AND survey = '{$survey->id}';
+			DELETE FROM _survey_answer_choosen WHERE email = '{$request->person->email}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES $values;
 			COMMIT;");
 
 		// add § for the user if all questions were completed
-		if ($this->isSurveyComplete($request->personPrivate->email, $survey->id)) {
+		if ($this->isSurveyComplete($request->person->email, $survey->id)) {
 			Connection::query("
 				UPDATE person SET credit=credit+{$survey->value} WHERE id='{$request->person->id}';
 				UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+		}
+
+		// if there is a referred, add it to the table and grant credits
+		if( ! empty($request->input->data->friend)) {
+			$credit = 0;
+			$friend = Utils::getPerson($request->input->data->friend);
+			if($friend && $friend->id != $request->person->id) {
+				// add credits to the friend
+				$credit = 1;
+				Connection::query("UPDATE person SET credit=credit+$credit WHERE email='{$friend->email}'");
+
+				// create notification
+				Utils::addNotification($friend->id, "Ha ganado §{$credit} por referir a @{$request->person->username} a nuestra encuesta. Gracias!", '{"command":"CREDITO"}', 'attach_money');
+			}
+
+			// add refer record to the table
+			Connection::query("
+				INSERT INTO _survey_referred (person_id, survey_id, referred, credit) 
+				VALUES ({$request->person->id}, {$survey->id}, '{$request->input->data->friend}', $credit)");
 		}
 	}
 

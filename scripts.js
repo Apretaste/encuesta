@@ -32,11 +32,11 @@ function formatDate(dateStr) {
 	return day + ' de ' + months[month] + ' del ' + date.getFullYear();
 }
 
-// get list of years fort the age
+// get list of years for the age
 function getYears() {
 	var year = new Date().getFullYear();
 	var years = [];
-	for (let i=year-15; i>=year-90; i--) years.push(i);
+	for (var i=year-15; i>=year-90; i--) years.push(i);
 	return years;
 }
 
@@ -47,10 +47,11 @@ function submitProfileData() {
 
 	// create the JSON of data
 	var data = new Object;
-	fields.forEach(function(field) {
+	for(var i=0; i<fields.length; i++) {
+		var field = fields[i];
 		var value = $('#'+field).val().trim();
 		if(value) data[field] = value;
-	});
+	}
 
 	// don't let you pass without filling all the fields
 	if(Object.keys(data).length < 5) {
@@ -73,6 +74,7 @@ function submitProfileData() {
 // submit a survey once completed
 function submitSurvey() {
 	// variable to save the ID of the responses
+	var friend = $('#friend').val();
 	var answers = [];
 
 	$('.question').each(function() {
@@ -98,7 +100,7 @@ function submitSurvey() {
 		// send information to the backend
 		apretaste.send({
 			command: "ENCUESTA RESPONDER",
-			data: {answers: answers},
+			data: {friend:friend, answers:answers},
 			redirect: false
 		});
 

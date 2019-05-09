@@ -10,7 +10,8 @@
 				</tr>
 			</thead>
 			<tbody>
-				<% surveys.forEach(function(item){ %>
+				<% for(var i=0; i<surveys.length; i++){ 
+					var item = surveys[i]; %>
 					<tr>
 						<td>
 							<a href="#!" onclick="apretaste.send({command:'ENCUESTA VER',data:{'id':'<%= item.survey %>'}})"><%= item.title %></a><br/>
@@ -19,7 +20,7 @@
 						<td class="center-align"><%= Math.floor(item.completion) %>%</td>
 						<td class="center-align">§<%= item.value %></td>
 					</tr>
-				<% }) %>
+				<% } %>
 			</tbody>
 		</table>
 
