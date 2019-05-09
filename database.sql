@@ -54,6 +54,32 @@ CREATE TABLE IF NOT EXISTS `_survey_question` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=7 ;
 
 --
+-- Table structure for table `_survey_referred`
+--
+
+CREATE TABLE `_survey_referred` (
+  `id` int(11) NOT NULL,
+  `person_id` int(11) NOT NULL,
+  `survey_id` int(11) NOT NULL,
+  `referred` char(100) NOT NULL,
+  `credit` int(3) NOT NULL COMMENT '0 if the email was not a valid AP user',
+  `inserted` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Indexes for table `_survey_referred`
+--
+ALTER TABLE `_survey_referred`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for table `_survey_referred`
+--
+ALTER TABLE `_survey_referred`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+COMMIT;
+
+--
 -- Constraints for table `_survey_answer`
 --
 ALTER TABLE `_survey_answer`
