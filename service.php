@@ -2,12 +2,14 @@
 
 class Service
 {
+
 	/**
 	 * Main service
 	 *
-	 * @author salvipascual
 	 * @param Request
 	 * @param Response
+	 *
+	 * @author salvipascual
 	 */
 	public function _main(Request $request, Response $response)
 	{
@@ -18,31 +20,34 @@ class Service
 	/**
 	 * Edit the person's profile
 	 *
-	 * @author salvipascual
 	 * @param Request
 	 * @param Response
+	 *
+	 * @author salvipascual
 	 */
 	public function _perfil(Request $request, Response $response)
 	{
 		// prepare response for the view
-		$response->setTemplate('profile.ejs', ["profile"=>$request->person]);
+		$response->setTemplate('profile.ejs', ["profile" => $request->person]);
 	}
 
 	/**
 	 * Get the list of surveys opened
-	 * 
-	 * @author salvipascual
-	 * @param Request $request
+	 *
+	 * @param Request  $request
 	 * @param Response $response
+	 *
+	 * @author salvipascual
 	 */
 	public function _lista(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if($this->isProfileIncomplete($request->person)) 
+		if ($this->isProfileIncomplete($request->person)) {
 			return $this->_perfil($request, $response);
+		}
 
 		// subqueries for the opened surveys
-		$sql_survey_datails = "
+		$sql_survey_datails         = "
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
@@ -55,7 +60,7 @@ class Service
 			FROM _survey_question
 			WHERE _survey_question.survey =  subq.survey
 			GROUP BY _survey_question.survey";
-		$sql_survey_total_choosen = "
+		$sql_survey_total_choosen   = "
 			SELECT total FROM (
 				SELECT COUNT(_survey_answer_choosen.answer) as total, (
 					SELECT _survey_question.survey
@@ -66,7 +71,7 @@ class Service
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
 					) as survey_id
 				FROM _survey_answer_choosen
-				WHERE _survey_answer_choosen.email = '{$request->person->email}'
+				WHERE _survey_answer_choosen.person_id = '{$request->person->id}'
 				GROUP BY survey_id
 			) AS subq2
 			WHERE survey_id = subq.survey";
@@ -83,36 +88,39 @@ class Service
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);");
 
 		// message if there are not opened surveys
-		if(empty($surveys)) {
+		if (empty($surveys)) {
 			return $response->setTemplate('message.ejs', [
-				"header"=>"No hay encuestas",
-				"icon"=>"sentiment_very_dissatisfied",
-				"text" => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
-				"button" => ["href"=>"ENCUESTA TERMINADAS", "caption"=>"Ver Terminadas"]
+				"header" => "No hay encuestas",
+				"icon"   => "sentiment_very_dissatisfied",
+				"text"   => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
+				"button" => ["href" => "ENCUESTA TERMINADAS", "caption" => "Ver Terminadas"],
 			]);
 		}
 
 		// send response to the user
-		$response->setTemplate('list.ejs', ['surveys'=>$surveys]);
+		$response->setTemplate('list.ejs', ['surveys' => $surveys]);
 	}
 
 	/**
 	 * Display a list of previous surveys
-	 * 
-	 * @author salvipascual
-	 * @param Request $request
+	 *
+	 * @param Request  $request
 	 * @param Response $response
+	 *
+	 * @return \Response|void
+	 * @author salvipascual
 	 */
 	public function _terminadas(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if($this->isProfileIncomplete($request->person)) 
+		if ($this->isProfileIncomplete($request->person)) {
 			return $this->_perfil($request, $response);
+		}
 
 		//get the list of surveys answered
 		$completed = Connection::query("
-			SELECT email, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT email, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE email='{$request->person->email}' GROUP BY survey) A
+			SELECT person_id, responses, total, C.title, C.value, A.inserted
+			FROM (SELECT person_id, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -120,32 +128,35 @@ class Service
 			WHERE responses = total");
 
 		// message if there are not opened surveys
-		if(empty($completed)) {
+		if (empty($completed)) {
 			return $response->setTemplate('message.ejs', [
-				"header"=>"No ha completado encuestas",
-				"icon"=>"sentiment_neutral",
-				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
-				"button" => ["href"=>"ENCUESTA", "caption"=>"Ver Encuestas"]
+				"header" => "No ha completado encuestas",
+				"icon"   => "sentiment_neutral",
+				"text"   => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
+				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
 		}
 
 		// send response to the user
-    $response->setCache(12*60*60);
-		$response->setTemplate('completed.ejs', ['surveys'=>$completed]);
+		$response->setCache(12 * 60 * 60);
+		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
 	}
 
 	/**
 	 * Display a survey to answer it
-	 * 
-	 * @author salvipascual
-	 * @param Request $request
+	 *
+	 * @param Request  $request
 	 * @param Response $response
+	 *
+	 * @return bool|\Response|void
+	 * @author salvipascual
 	 */
 	public function _ver(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if($this->isProfileIncomplete($request->person)) 
+		if ($this->isProfileIncomplete($request->person)) {
 			return $this->_perfil($request, $response);
+		}
 
 		// get the survey details
 		$res = Connection::query("
@@ -159,9 +170,9 @@ class Service
 				_survey_question.title AS question_title,
 				_survey_answer.id AS answer,
 				_survey_answer.title AS answer_title,
-				(SELECT COUNT(email)
+				(SELECT COUNT(person_id)
 					FROM _survey_answer_choosen
-					WHERE email = '{$request->person->email}'
+					WHERE person_id = '{$request->person->id}'
 					AND answer = _survey_answer.id
 				) AS choosen
 			FROM _survey
@@ -173,47 +184,51 @@ class Service
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
-		if (empty($res) || ! isset($res[0])) return false;
+		if (empty($res) || !isset($res[0])) {
+			return false;
+		}
 
 		// message if the survey was already completed
-		if($this->isSurveyComplete($request->person->email, $res[0]->survey)) {
+		if ($this->isSurveyComplete($request->person->id, $res[0]->survey)) {
 			return $response->setTemplate('message.ejs', [
-				"header"=>"¡Chócala! Ya respondió esta encuesta",
-				"icon"=>"pan_tool",
-				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
-				"button" => ["href"=>"ENCUESTA", "caption"=>"Ver Encuestas"]
+				"header" => "¡Chócala! Ya respondió esta encuesta",
+				"icon"   => "pan_tool",
+				"text"   => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
+				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
 		}
 
 		// create a new Survey object
-		$survey = new stdClass();
-		$survey->id = $res[0]->survey;
-		$survey->title = $res[0]->survey_title;
-		$survey->details = $res[0]->survey_details;
-		$survey->value = $res[0]->survey_value;
+		$survey            = new stdClass();
+		$survey->id        = $res[0]->survey;
+		$survey->title     = $res[0]->survey_title;
+		$survey->details   = $res[0]->survey_details;
+		$survey->value     = $res[0]->survey_value;
 		$survey->questions = [];
 
 		// create the list of questions
 		foreach ($res as $r) {
 			// create the question if it does not exist
 			$question = end($survey->questions);
-			if(empty($question) || $question->id != $r->question) {
-				$question = new stdClass();
-				$question->id = $r->question;
-				$question->title = $r->question_title;
-				$question->answers = [];
+			if (empty($question) || $question->id != $r->question) {
+				$question            = new stdClass();
+				$question->id        = $r->question;
+				$question->title     = $r->question_title;
+				$question->answers   = [];
 				$question->completed = false;
 				$survey->questions[] = $question;
 			}
 
 			// create the answers for the question
-			$answer = new stdClass();
-			$answer->id = $r->answer;
-			$answer->title = $r->answer_title;
+			$answer          = new stdClass();
+			$answer->id      = $r->answer;
+			$answer->title   = $r->answer_title;
 			$answer->choosen = $r->choosen == '1';
 
 			// mark question as completed
-			if ($answer->choosen) $question->completed = true;
+			if ($answer->choosen) {
+				$question->completed = true;
+			}
 
 			// assign the answer to the question
 			$question->answers[] = $answer;
@@ -226,20 +241,26 @@ class Service
 	/**
 	 * Responds a survey
 	 *
-	 * @author salvipascual
 	 * @param Request
 	 * @param Response
+	 *
+	 * @return bool
+	 * @author salvipascual
 	 */
 	public function _responder(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if($this->isProfileIncomplete($request->person)) return false;
+		if ($this->isProfileIncomplete($request->person)) {
+			return false;
+		}
 
 		// do not continue if data is not passed
-		if(empty($request->input->data->answers)) return false;
+		if (empty($request->input->data->answers)) {
+			return false;
+		}
 
 		// get the question IDs for the answers received
-		$answers = implode(",", $request->input->data->answers);
+		$answers   = implode(",", $request->input->data->answers);
 		$questions = Connection::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
@@ -251,39 +272,41 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		// do not let surveys be submitted twice
-		if ($this->isSurveyComplete($request->person->email, $survey->id)) return false;
+		if ($this->isSurveyComplete($request->person->id, $survey->id)) {
+			return false;
+		}
 
 		// prepare the data to be sent in one large query
 		$values = [];
-		for($i=0; $i<count($request->input->data->answers); $i++) {
+		for ($i = 0; $i < count($request->input->data->answers); $i++) {
 			$questionID = $questions[$i]->question;
-			$answerID = $request->input->data->answers[$i];
-			$values[] = "('{$request->person->email}', {$survey->id}, $questionID, $answerID)";
+			$answerID   = $request->input->data->answers[$i];
+			$values[]   = "('{$request->person->id}', {$survey->id}, $questionID, $answerID)";
 		}
 		$values = implode(",", $values);
 
 		// replace all old answers by the new answers in one query
 		Connection::query("
 			START TRANSACTION;
-			DELETE FROM _survey_answer_choosen WHERE email = '{$request->person->email}' AND survey = '{$survey->id}';
-			INSERT INTO _survey_answer_choosen (email,survey,question,answer) VALUES $values;
+			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
+			INSERT INTO _survey_answer_choosen (person_id, survey,question,answer) VALUES $values;
 			COMMIT;");
 
 		// add § for the user if all questions were completed
-		if ($this->isSurveyComplete($request->person->email, $survey->id)) {
+		if ($this->isSurveyComplete($request->person->id, $survey->id)) {
 			Connection::query("
 				UPDATE person SET credit=credit+{$survey->value} WHERE id='{$request->person->id}';
 				UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 		}
 
 		// if there is a referred, add it to the table and grant credits
-		if( ! empty($request->input->data->friend)) {
+		if (!empty($request->input->data->friend)) {
 			$credit = 0;
 			$friend = Utils::getPerson($request->input->data->friend);
-			if($friend && $friend->id != $request->person->id) {
+			if ($friend && $friend->id != $request->person->id) {
 				// add credits to the friend
 				$credit = 1;
-				Connection::query("UPDATE person SET credit=credit+$credit WHERE email='{$friend->email}'");
+				Connection::query("UPDATE person SET credit=credit+$credit WHERE id = '{$friend->id}'");
 
 				// create notification
 				Utils::addNotification($friend->id, "Ha ganado §{$credit} por referir a @{$request->person->username} a nuestra encuesta. Gracias!", '{"command":"CREDITO"}', 'attach_money');
@@ -299,17 +322,18 @@ class Service
 	/**
 	 * Check if the survey is completed
 	 *
-	 * @author salvipascual
-	 * @param String $email
-	 * @param String $surveyID
+	 * @param integer $person_id
+	 * @param String  $surveyID
+	 *
 	 * @return Boolean, true if survey is 100% completed
-	 * */
-	private function isSurveyComplete($email, $surveyID)
+	 * @author salvipascual
+	 */
+	private function isSurveyComplete($person_id, $surveyID)
 	{
 		$res = Connection::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND email='$email') B");
+			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$person_id') B");
 
 		return $res[0]->total === $res[0]->answers;
 	}
@@ -317,15 +341,16 @@ class Service
 	/**
 	 * Check if the profile is completed or not
 	 *
-	 * @author salvipascual
 	 * @param Person $person
+	 *
 	 * @return Boolean, true if profile is incompleted
-	 * */
+	 * *@author salvipascual
+	 */
 	private function isProfileIncomplete($person)
 	{
-		return $person->age < 5 || $person->age > 130 ||
-			empty($person->province) ||
-			empty($person->skin) ||
-			empty($person->highest_school_level);
+		return $person->age < 5 || $person->age > 130
+			|| empty($person->province)
+			|| empty($person->skin)
+			|| empty($person->highest_school_level);
 	}
 }
