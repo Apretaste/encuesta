@@ -264,7 +264,7 @@ class EncuestaService extends ApretasteService
     for ($i = 0; $i < count($this->request->input->data->answers); $i++) {
       $questionID = $questions[$i]->question;
       $answerID = $this->request->input->data->answers[$i];
-      $values[] = "('{$this->request->person->id}', {$survey->id}, $questionID, $answerID)";
+      $values[] = "('{$this->request->person->id}', '{$this->request->person->email}', {$survey->id}, $questionID, $answerID)";
     }
     $values = implode(",", $values);
 
@@ -272,7 +272,7 @@ class EncuestaService extends ApretasteService
     q("
 			START TRANSACTION;
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$this->request->person->id}' AND survey = '{$survey->id}';
-			INSERT INTO _survey_answer_choosen (person_id, survey,question,answer) VALUES $values;
+			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
 			COMMIT;");
 
     // add § for the user if all questions were completed
