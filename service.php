@@ -148,7 +148,6 @@ class EncuestaService extends ApretasteService
     // ensure your profile is completed
     if ($this->isProfileIncomplete()) {
       $this->_perfil();
-
       return;
     }
 
@@ -243,11 +242,6 @@ class EncuestaService extends ApretasteService
    */
   public function _responder()
   {
-    // ensure your profile is completed
-    if ($this->isProfileIncomplete()) {
-      return;
-    }
-
     // do not continue if data is not passed
     if (empty($this->request->input->data->answers)) {
       return;
