@@ -1,6 +1,6 @@
 <?php
 
-class Encuesta extends ApretasteService
+class EncuestaService extends ApretasteService
 {
 
   /**
