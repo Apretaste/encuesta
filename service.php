@@ -148,6 +148,7 @@ class EncuestaService extends ApretasteService
     // ensure your profile is completed
     if ($this->isProfileIncomplete()) {
       $this->_perfil();
+
       return;
     }
 
@@ -258,6 +259,11 @@ class EncuestaService extends ApretasteService
 			JOIN _survey_question B
 			ON A.id = B.survey
 			WHERE B.id = {$questions[0]->question}")[0];
+
+    if (!isset($survey->id)) {
+      $this->simpleMessage("Encuesta no encontrada", "Los datos recibidos por ti no concuerdan con las encuestas que tenemos. Por favor, prueba borrar la cache de la aplicacion. Si el problema persiste contacte al soporte tecnico de A!");
+      return;
+    }
 
     // prepare the data to be sent in one large query
     $values = [];
