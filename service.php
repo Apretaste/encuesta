@@ -294,7 +294,7 @@ class EncuestaService extends ApretasteService
       if ($friend && $friend->id != $this->request->person->id) {
 		  // add credits to the friend
 		  $credit = 1;
-		  Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
+		  Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, false, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
       }
 
       // add refer record to the table
