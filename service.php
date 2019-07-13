@@ -265,6 +265,11 @@ class EncuestaService extends ApretasteService
       return;
     }
 
+    if ($this->isSurveyComplete($survey->id)) {
+        $this->simpleMessage("Encuesta completada", "La encuesta ha sido completada por usted anteriormente.");
+        return;
+    }
+
     // prepare the data to be sent in one large query
     $values = [];
     for ($i = 0, $iMax = count($this->request->input->data->answers); $i < $iMax; $i++) {
