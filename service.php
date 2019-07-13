@@ -267,7 +267,7 @@ class EncuestaService extends ApretasteService
 
     // prepare the data to be sent in one large query
     $values = [];
-    for ($i = 0; $i < count($this->request->input->data->answers); $i++) {
+    for ($i = 0, $iMax = count($this->request->input->data->answers); $i < $iMax; $i++) {
       $questionID = $questions[$i]->question;
       $answerID = $this->request->input->data->answers[$i];
       $values[] = "('{$this->request->person->id}', '{$this->request->person->email}', {$survey->id}, $questionID, $answerID)";
