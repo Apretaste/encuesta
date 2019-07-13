@@ -283,9 +283,8 @@ class EncuestaService extends ApretasteService
 
     // add § for the user if all questions were completed
     if ($this->isSurveyComplete($survey->id)) {
-      q("
-				UPDATE person SET credit=credit+{$survey->value} WHERE id='{$this->request->person->id}';
-				UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+		Utils::addCredit($survey->value, "ENCUESTA {$survey->id}", $this->request->person->id);
+		Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
     }
 
     // if there is a referred, add it to the table and grant credits
@@ -293,12 +292,9 @@ class EncuestaService extends ApretasteService
       $credit = 0;
       $friend = Utils::getPerson($this->request->input->data->friend);
       if ($friend && $friend->id != $this->request->person->id) {
-        // add credits to the friend
-        $credit = 1;
-        q("UPDATE person SET credit=credit+$credit WHERE id = '{$friend->id}'");
-
-        // create notification
-        Utils::addNotification($friend->id, "Ha ganado §{$credit} por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!", '{"command":"CREDITO"}', 'attach_money');
+		  // add credits to the friend
+		  $credit = 1;
+		  Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, false, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
       }
 
       // add refer record to the table
