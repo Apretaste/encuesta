@@ -2,113 +2,125 @@
 // ON LOAD FUNCTIONS
 //
 
-$(document).ready(function(){
-	$('select').formSelect();
+$(document).ready(function () {
+  $('select').formSelect();
 });
 
 //
 // FUCTIONS FOR THE SERVICE
 //
 
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
+
 // formats a date and time
 function formatDateTime(dateStr) {
-	var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-	var date = new Date(dateStr);
-	var month = date.getMonth();
-	var day = date.getDate().toString().padStart(2, '0');
-	var hour = (date.getHours() < 12) ? date.getHours() : date.getHours() - 12;
-	var minutes = date.getMinutes();
-	if (minutes < 10) minutes = '0' + minutes;
-	var amOrPm = (date.getHours() < 12) ? "am" : "pm";
-	return day + ' de ' + months[month] + ' a las ' + hour + ':' + minutes + amOrPm;
+  var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  var date = new Date(dateStr);
+  var month = date.getMonth();
+  var day = pad(date.getDay(), 2);
+  var hour = (date.getHours() < 12) ? date.getHours() : date.getHours() - 12;
+  var minutes = date.getMinutes();
+  if (minutes < 10) {
+    minutes = '0' + minutes;
+  }
+  var amOrPm = (date.getHours() < 12) ? "am" : "pm";
+  return day + ' de ' + months[month] + ' a las ' + hour + ':' + minutes + amOrPm;
 }
 
 // formats a date and time
 function formatDate(dateStr) {
-	var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-	var date = new Date(dateStr);
-	var month = date.getMonth();
-	var day = date.getDate().toString().padStart(2, '0');
-	return day + ' de ' + months[month] + ' del ' + date.getFullYear();
+  var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  var date = new Date(dateStr);
+  var month = date.getMonth();
+  var day = pad(date.getDay(), 2);
+  return day + ' de ' + months[month] + ' del ' + date.getFullYear();
 }
 
 // get list of years for the age
 function getYears() {
-	var year = new Date().getFullYear();
-	var years = [];
-	for (var i=year-15; i>=year-90; i--) years.push(i);
-	return years;
+  var year = new Date().getFullYear();
+  var years = [];
+  for (var i = year - 15; i >= year - 90; i--) {
+    years.push(i);
+  }
+  return years;
 }
 
-// submit the profile informacion 
+// submit the profile information
 function submitProfileData() {
-	// get the array of fields and  
-	var fields = ['gender','year_of_birth','skin','highest_school_level','province'];
+  // get the array of fields and
+  var fields = ['gender', 'year_of_birth', 'skin', 'highest_school_level', 'province'];
 
-	// create the JSON of data
-	var data = new Object;
-	for(var i=0; i<fields.length; i++) {
-		var field = fields[i];
-		var value = $('#'+field).val().trim();
-		if(value) data[field] = value;
-	}
+  // create the JSON of data
+  var data = {};
+  for (var i = 0; i < fields.length; i++) {
+    var field = fields[i];
+    var value = $('#' + field).val().trim();
+    if (value) {
+      data[field] = value;
+    }
+  }
 
-	// don't let you pass without filling all the fields
-	if(Object.keys(data).length < 5) {
-		M.toast({html: 'Por favor complete todos los campos antes de continuar'});
-		return false;
-	}
+  // don't let you pass without filling all the fields
+  if (Object.keys(data).length < 5) {
+    M.toast({html: 'Por favor complete todos los campos antes de continuar'});
+    return false;
+  }
 
-	// save information in the backend
-	apretaste.send({
-		"command": "PERFIL UPDATE",
-		"data": data,
-		"redirect": false,
-		callback: {
-			name: "callbackReloadEncuesta",
-			data: {}
-		}
-	});
+  // save information in the backend
+  apretaste.send({
+    command: "PERFIL UPDATE",
+    data: data,
+    redirect: false,
+    callback: {
+      name: "callbackReloadEncuesta",
+      data: {}
+    }
+  });
 }
 
 // submit a survey once completed
 function submitSurvey() {
-	// variable to save the ID of the responses
-	var friend = $('#friend').val();
-	var answers = [];
+  // variable to save the ID of the responses
+  var friend = $('#friend').val();
+  var answers = [];
 
-	$('.question').each(function() {
-		// check if the item was checked and return the answer ID
-		var item = $(this).find("input[name='"+this.id+"']:checked").val();
-		answers.push(item);
+  $('.question').each(function () {
+    // check if the item was checked and return the answer ID
+    var item = $(this).find("input[name='" + this.id + "']:checked").val();
+    answers.push(item);
 
-		// if no checked, scroll to it and clean the responses
-		if(item == undefined) {
-			// display a message
-			M.toast({html: 'Por favor responda todas las preguntas'});
+    // if no checked, scroll to it and clean the responses
+    if (item == undefined) {
+      // display a message
+      M.toast({html: 'Por favor responda todas las preguntas'});
 
-			// scroll to the question
-			$("html, body").animate({scrollTop: $(this).offset().top - 100}, 1000);
+      // scroll to the question
+      $("html, body").animate({scrollTop: $(this).offset().top - 100}, 1000);
 
-			// clean the responses list to stop sending
-			answers = [];
-			return false;
-		}
-	});
+      // clean the responses list to stop sending
+      answers = [];
+      return false;
+    }
+  });
 
-	if(answers.length) {
-		// send information to the backend
-		apretaste.send({
-			command: "ENCUESTA RESPONDER",
-			data: {friend:friend, answers:answers},
-			redirect: false
-		});
+  if (answers.length) {
+    // send information to the backend
+    apretaste.send({
+      command: "ENCUESTA RESPONDER",
+      data: {friend: friend, answers: answers},
+      redirect: false
+    });
 
-		// display the DONE message
-		$('#list').hide();
-		$('#btn').hide();
-		$('#msg').show();
-	}
+    // display the DONE message
+    $('#list').hide();
+    $('#btn').hide();
+    $('#msg').show();
+  }
 }
 
 //
@@ -117,17 +129,17 @@ function submitSurvey() {
 
 // redirect to the survey page
 function callbackReloadEncuesta() {
-	apretaste.send({command: "ENCUESTA"});
+  apretaste.send({command: "ENCUESTA"});
 }
 
 //
 // PROTOTYPES
 //
 
-String.prototype.replaceAll = function(search, replacement) {
-	return this.split(search).join(replacement);
+String.prototype.replaceAll = function (search, replacement) {
+  return this.split(search).join(replacement);
 };
 
-String.prototype.firstUpper = function() {
-	return this.charAt(0).toUpperCase() + this.substr(1).toLowerCase();
+String.prototype.firstUpper = function () {
+  return this.charAt(0).toUpperCase() + this.substr(1).toLowerCase();
 };

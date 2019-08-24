@@ -1,5 +1,7 @@
 <?php
 
+use Apretaste\Money;
+
 class EncuestaService extends ApretasteService
 {
 
@@ -234,13 +236,14 @@ class EncuestaService extends ApretasteService
     $this->response->setTemplate('survey.ejs', ['survey' => $survey]);
   }
 
-  /**
-   * Responds a survey
-   *
-   *
-   * @return void
-   * @author salvipascual
-   */
+    /**
+     * Responds a survey
+     *
+     *
+     * @return void
+     * @throws \Exception
+     * @author salvipascual
+     */
   public function _responder()
   {
     // do not continue if data is not passed
@@ -288,7 +291,8 @@ class EncuestaService extends ApretasteService
 
     // add § for the user if all questions were completed
     if ($this->isSurveyComplete($survey->id)) {
-		Utils::addCredit($survey->value, "ENCUESTA {$survey->id}", $this->request->person->id);
+        Money::transfer(Money::BANK, $this->request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §$credit por contestar la encuesta $survey->");
+		Utils::addCredit($survey->value, , $this->request->person->id);
 		Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
     }
 
@@ -296,10 +300,11 @@ class EncuestaService extends ApretasteService
     if (!empty($this->request->input->data->friend)) {
       $credit = 0;
       $friend = Utils::getPerson($this->request->input->data->friend);
-      if ($friend && $friend->id != $this->request->person->id) {
+      if ($friend && $friend->id !== $this->request->person->id) {
 		  // add credits to the friend
 		  $credit = 1;
-		  Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, false, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
+		  Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
+		 //Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, false, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
       }
 
       // add refer record to the table
