@@ -292,7 +292,7 @@ class EncuestaService extends ApretasteService
     // add § for the user if all questions were completed
     if ($this->isSurveyComplete($survey->id)) {
         Money::transfer(Money::BANK, $this->request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §$credit por contestar la encuesta $survey->");
-		Utils::addCredit($survey->value, , $this->request->person->id);
+//		Utils::addCredit($survey->value, "ENCUESTA {$survey->id}" , $this->request->person->id);
 		Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
     }
 
