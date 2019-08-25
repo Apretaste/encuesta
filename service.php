@@ -304,12 +304,13 @@ class EncuestaService extends ApretasteService
 		  // add credits to the friend
 		  $credit = 1;
 		  Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
-		 //Utils::addCredit($credit, "ENCUESTA REFERIR", $friend->id, null, false, "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
+
+          // add refer record to the table
+          Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) 
+				VALUES ({$this->request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
       }
 
-      // add refer record to the table
-      q("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) 
-				VALUES ({$this->request->person->id}, {$survey->id}, '{$this->request->input->data->friend}', $credit)");
+
     }
   }
 
