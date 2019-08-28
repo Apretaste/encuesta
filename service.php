@@ -257,7 +257,7 @@ class EncuestaService extends ApretasteService
 
     // get the survey
     $survey = q("
-			SELECT A.id, A.value
+			SELECT A.id, A.value, A.title
 			FROM _survey A
 			JOIN _survey_question B
 			ON A.id = B.survey
@@ -291,7 +291,7 @@ class EncuestaService extends ApretasteService
 
     // add § for the user if all questions were completed
     if ($this->isSurveyComplete($survey->id)) {
-        Money::transfer(Money::BANK, $this->request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §$credit por contestar la encuesta $survey->");
+        Money::transfer(Money::BANK, $this->request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
 //		Utils::addCredit($survey->value, "ENCUESTA {$survey->id}" , $this->request->person->id);
 		Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
     }
