@@ -1,7 +1,7 @@
 {
 	"name": "encuesta",
-	"version": "7",
-	"description": "Permite responder encuestas públicas y obtener créditos de Apretaste.",
+	"version": 8,
+	"description": "Permite responder encuestas y obtener créditos de Apretaste.",
 	"category": "social",
 	"creator": "salvi@apretaste.org",
 	"listed": true
