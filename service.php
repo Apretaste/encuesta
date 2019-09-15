@@ -186,7 +186,7 @@ class EncuestaService extends ApretasteService
 		// create a new Survey object
 		$survey = new stdClass();
 		$survey->id = $res[0]->survey;
-		$survey->title = $res[0]->survey_title;
+		$survey->title = utf8_encode($res[0]->survey_title);
 		$survey->details = $res[0]->survey_details;
 		$survey->value = $res[0]->survey_value;
 		$survey->questions = [];
