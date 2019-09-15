@@ -125,6 +125,8 @@ class EncuestaService extends ApretasteService
 			]);
 		}
 
+		foreach($completed as $survey) $survey->title = utf8_encode($survey->title);
+
 		// send response to the user
 		$this->response->setCache(12 * 60 * 60);
 		$this->response->setTemplate('completed.ejs', ['surveys' => $completed]);
