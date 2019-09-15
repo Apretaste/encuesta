@@ -171,12 +171,14 @@ class EncuestaService extends ApretasteService
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey)) {
-			return $this->response->setTemplate('message.ejs', [
+			$this->response->setTemplate('message.ejs', [
 				"header" => "¡Chócala! Ya respondió esta encuesta",
 				"icon"   => "pan_tool",
 				"text"   => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
+
+            return;
 		}
 
 		// create a new Survey object
@@ -191,10 +193,11 @@ class EncuestaService extends ApretasteService
 		foreach ($res as $r) {
 			// create the question if it does not exist
 			$question = end($survey->questions);
+
 			if (empty($question) || $question->id != $r->question) {
 				$question = new stdClass();
 				$question->id = $r->question;
-				$question->title = $r->question_title;
+				$question->title = utf8_encode($r->question_title);
 				$question->answers = [];
 				$question->completed = false;
 				$survey->questions[] = $question;
@@ -203,7 +206,7 @@ class EncuestaService extends ApretasteService
 			// create the answers for the question
 			$answer = new stdClass();
 			$answer->id = $r->answer;
-			$answer->title = $r->answer_title;
+			$answer->title = utf8_encode($r->answer_title);
 			$answer->choosen = $r->choosen == '1';
 
 			// mark question as completed
