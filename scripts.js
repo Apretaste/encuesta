@@ -51,8 +51,8 @@ function submitProfileData() {
 	// get the array of fields and  
 	var fields = ['gender', 'year_of_birth', 'skin', 'highest_school_level', 'province']; // create the JSON of data
 
+	// get the information for all the fields
 	var data = {};
-
 	for (var i = 0; i < fields.length; i++) {
 		var field = fields[i];
 		var value = $('#' + field).val().trim();
@@ -61,9 +61,7 @@ function submitProfileData() {
 
 	// don't let you pass without filling all the fields
 	if (Object.keys(data).length < 5) {
-		M.toast({
-			html: 'Por favor complete todos los campos antes de continuar'
-		});
+		M.toast({html: 'Por favor complete todos los campos antes de continuar'});
 		return false;
 	}
 

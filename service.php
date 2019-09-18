@@ -2,17 +2,17 @@
 
 use Apretaste\Money;
 
-class EncuestaService extends ApretasteService
+class Service
 {
 	/**
 	 * Main service
 	 *
 	 * @author salvipascual
 	 */
-	public function _main()
+	public function _main (Request $request, Response $response)
 	{
 		// redirect to the list of surveys opened
-		$this->_lista();
+		$this->_lista($request, $response);
 	}
 
 	/**
@@ -20,10 +20,10 @@ class EncuestaService extends ApretasteService
 	 *
 	 * @author salvipascual
 	 */
-	public function _perfil()
+	public function _perfil (Request $request, Response $response)
 	{
 		// prepare response for the view
-		return $this->response->setTemplate('profile.ejs', ["profile" => $this->request->person]);
+		return $response->setTemplate('profile.ejs', ["profile" => $request->person]);
 	}
 
 	/**
@@ -32,10 +32,10 @@ class EncuestaService extends ApretasteService
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _lista()
+	public function _lista (Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete()) return $this->_perfil();
+		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
 
 		// subqueries for the opened surveys
 		$sql_survey_datails = "
@@ -64,7 +64,7 @@ class EncuestaService extends ApretasteService
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
 					) as survey_id
 				FROM _survey_answer_choosen
-				WHERE _survey_answer_choosen.person_id = '{$this->request->person->id}'
+				WHERE _survey_answer_choosen.person_id = '{$request->person->id}'
 				GROUP BY survey_id
 			) AS subq2
 			WHERE survey_id = subq.survey";
@@ -82,7 +82,7 @@ class EncuestaService extends ApretasteService
 
 		// message if there are not opened surveys
 		if (empty($surveys)) {
-			return $this->response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				"header" => "No hay encuestas",
 				"icon"   => "sentiment_very_dissatisfied",
 				"text"   => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
@@ -91,7 +91,7 @@ class EncuestaService extends ApretasteService
 		}
 
 		// send response to the user
-		$this->response->setTemplate('list.ejs', ['surveys' => $surveys]);
+		$response->setTemplate('list.ejs', ['surveys' => $surveys]);
 	}
 
 	/**
@@ -100,15 +100,15 @@ class EncuestaService extends ApretasteService
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _terminadas()
+	public function _terminadas (Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete()) return $this->_perfil();
+		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
 
 		//get the list of surveys answered
 		$completed = Connection::query("
 			SELECT person_id, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT person_id, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$this->request->person->id}' GROUP BY survey) A
+			FROM (SELECT person_id, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -117,10 +117,10 @@ class EncuestaService extends ApretasteService
 
 		// message if there are not opened surveys
 		if (empty($completed)) {
-			return $this->response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				"header" => "No ha completado encuestas",
-				"icon"   => "sentiment_neutral",
-				"text"   => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
+				"icon" => "sentiment_neutral",
+				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
 		}
@@ -128,8 +128,8 @@ class EncuestaService extends ApretasteService
 		foreach($completed as $survey) $survey->title = utf8_encode($survey->title);
 
 		// send response to the user
-		$this->response->setCache(12 * 60 * 60);
-		$this->response->setTemplate('completed.ejs', ['surveys' => $completed]);
+		$response->setCache(12 * 60 * 60);
+		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
 	}
 
 	/**
@@ -138,10 +138,10 @@ class EncuestaService extends ApretasteService
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _ver()
+	public function _ver (Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete()) return $this->_perfil();
+		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
 
 		// get the survey details
 		$res = Connection::query("
@@ -157,7 +157,7 @@ class EncuestaService extends ApretasteService
 				_survey_answer.title AS answer_title,
 				(SELECT COUNT(person_id)
 					FROM _survey_answer_choosen
-					WHERE person_id = '{$this->request->person->id}'
+					WHERE person_id = '{$request->person->id}'
 					AND answer = _survey_answer.id
 				) AS choosen
 			FROM _survey
@@ -165,7 +165,7 @@ class EncuestaService extends ApretasteService
 			INNER JOIN _survey_question
 			ON _survey_question.survey = _survey.id
 			AND _survey_answer.question = _survey_question.id
-			WHERE _survey.id = {$this->request->input->data->id}
+			WHERE _survey.id = {$request->input->data->id}
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
@@ -173,14 +173,12 @@ class EncuestaService extends ApretasteService
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey)) {
-			$this->response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				"header" => "¡Chócala! Ya respondió esta encuesta",
 				"icon"   => "pan_tool",
 				"text"   => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
-
-            return;
 		}
 
 		// create a new Survey object
@@ -221,7 +219,7 @@ class EncuestaService extends ApretasteService
 		}
 
 		// send response to the view
-		$this->response->setTemplate('survey.ejs', ['survey' => $survey]);
+		$response->setTemplate('survey.ejs', ['survey' => $survey]);
 	}
 
 	/**
@@ -231,13 +229,13 @@ class EncuestaService extends ApretasteService
 	 * @return void
 	 * @throws \Exception
 	 */
-	public function _responder()
+	public function _responder (Request $request, Response $response)
 	{
 		// do not continue if data is not passed
-		if (empty($this->request->input->data->answers)) return;
+		if (empty($request->input->data->answers)) return;
 
 		// get the question IDs for the answers received
-		$answers = implode(",", $this->request->input->data->answers);
+		$answers = implode(",", $request->input->data->answers);
 		$questions = Connection::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
@@ -260,40 +258,40 @@ class EncuestaService extends ApretasteService
 
 		// prepare the data to be sent in one large query
 		$values = [];
-		for ($i = 0, $iMax = count($this->request->input->data->answers); $i < $iMax; $i++) {
+		for ($i = 0, $iMax = count($request->input->data->answers); $i < $iMax; $i++) {
 			$questionID = $questions[$i]->question;
-			$answerID = $this->request->input->data->answers[$i];
-			$values[] = "('{$this->request->person->id}', '{$this->request->person->email}', {$survey->id}, $questionID, $answerID)";
+			$answerID = $request->input->data->answers[$i];
+			$values[] = "('{$request->person->id}', '{$request->person->email}', {$survey->id}, $questionID, $answerID)";
 		}
 		$values = implode(",", $values);
 
 		// replace all old answers by the new answers in one query
 		Connection::query("
 			START TRANSACTION;
-			DELETE FROM _survey_answer_choosen WHERE person_id = '{$this->request->person->id}' AND survey = '{$survey->id}';
+			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
 			COMMIT;");
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id)) {
-			Money::transfer(Money::BANK, $this->request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
+			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 		}
 
 /* @NOTE: REFERRED CREDITS CLOSED DOWN FOR NOW 
 
 		// if there is a referred, add it to the table and grant credits
-		if (!empty($this->request->input->data->friend)) {
-			$friend = Utils::getPerson($this->request->input->data->friend);
-			if ($friend && $friend->id !== $this->request->person->id) {
+		if (!empty($request->input->data->friend)) {
+			$friend = Utils::getPerson($request->input->data->friend);
+			if ($friend && $friend->id !== $request->person->id) {
 				// amount of referred credits
 				$credit = 1;
 
 				// add credits to the friend
-				Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$this->request->person->username} a nuestra encuesta. Gracias!");
+				Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$request->person->username} a nuestra encuesta. Gracias!");
 
 				// add refer record to the table
-				Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) VALUES ({$this->request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
+				Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) VALUES ({$request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
 			}
 		}
 */
@@ -312,7 +310,7 @@ class EncuestaService extends ApretasteService
 		$res = Connection::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='{$this->request->person->id}') B");
+			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='{$request->person->id}') B");
 
 		return $res[0]->total === $res[0]->answers;
 	}
@@ -323,11 +321,11 @@ class EncuestaService extends ApretasteService
 	 * @return Boolean, true if profile is incomplete
 	 * @author salvipascual
 	 */
-	private function isProfileIncomplete()
+	private function isProfileIncomplete($request)
 	{
-		return $this->request->person->age < 5 || $this->request->person->age > 130
-			|| empty($this->request->person->province)
-			|| empty($this->request->person->skin)
-			|| empty($this->request->person->highest_school_level);
+		return $request->person->age < 5 || $request->person->age > 130
+			|| empty($request->person->province)
+			|| empty($request->person->skin)
+			|| empty($request->person->highest_school_level);
 	}
 }
