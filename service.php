@@ -172,11 +172,11 @@ class Service
 		if (empty($res) || !isset($res[0])) return;
 
 		// message if the survey was already completed
-		if ($this->isSurveyComplete($res[0]->survey)) {
+		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
 			return $response->setTemplate('message.ejs', [
 				"header" => "¡Chócala! Ya respondió esta encuesta",
-				"icon"   => "pan_tool",
-				"text"   => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
+				"icon" => "pan_tool",
+				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
 		}
@@ -247,13 +247,21 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		if (!isset($survey->id)) {
-			$this->simpleMessage("Encuesta no encontrada", "Los datos recibidos por ti no concuerdan con las encuestas que tenemos. Por favor, prueba borrar la cache de la aplicacion. Si el problema persiste contacte al soporte tecnico de A!");
-			return;
+			return $response->setTemplate('message.ejs', [
+				"header" => "Encuesta no encontrada",
+				"icon" => "sentiment_very_dissatisfied",
+				"text" => "Hubo un error procesando su respuesta. Es posible que la app esté desincronizada. Por favor abra los ajustes y borre los datos guardados. Si el problema persiste, contacte al soporte técnico.",
+				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+			]);
 		}
 
-		if ($this->isSurveyComplete($survey->id)) {
-			$this->simpleMessage("Encuesta completada", "La encuesta ha sido completada por usted anteriormente.");
-			return;
+		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
+			return $response->setTemplate('message.ejs', [
+				"header" => "Encuesta completada",
+				"icon" => "sentiment_very_satisfied",
+				"text" => "Esta encuesta ha sido completada por usted anteriormente y se le ha asignado el crédito. No es necesario hacer nada mas. ¡Gracias!",
+				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+			]);
 		}
 
 		// prepare the data to be sent in one large query
@@ -273,7 +281,7 @@ class Service
 			COMMIT;");
 
 		// add § for the user if all questions were completed
-		if ($this->isSurveyComplete($survey->id)) {
+		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
 			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 		}
@@ -301,16 +309,16 @@ class Service
 	 * Check if the survey is completed
 	 *
 	 * @param String $surveyID
-	 *
+	 * @param String $personID
 	 * @return Boolean, true if survey is 100% completed
 	 * @author salvipascual
 	 */
-	private function isSurveyComplete($surveyID)
+	private function isSurveyComplete($surveyID, $personID)
 	{
 		$res = Connection::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='{$request->person->id}') B");
+			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$personID') B");
 
 		return $res[0]->total === $res[0]->answers;
 	}
