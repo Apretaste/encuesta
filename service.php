@@ -90,7 +90,6 @@ class Service
 		}
 
 		// send response to the user
-		$response->setCache("day");
 		$response->setTemplate('list.ejs', ['surveys' => $surveys]);
 	}
 
