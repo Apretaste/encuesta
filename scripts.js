@@ -6,6 +6,7 @@
 
 $(document).ready(function () {
 	$('select').formSelect();
+	$('.tabs').tabs();
 });
 
 //
@@ -14,7 +15,7 @@ $(document).ready(function () {
 
 // formats a date and time
 function formatDateTime(dateStr) {
-	var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+	var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Sep.', 'Octubre', 'Nov.', 'Dic.'];
 	var date = new Date(dateStr);
 	var month = date.getMonth();
 	var day = date.getDate().toString().padStart(2, '0');
@@ -27,7 +28,7 @@ function formatDateTime(dateStr) {
 
 // formats a date and time
 function formatDate(dateStr) {
-	var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+	var months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Sep.', 'Octubre', 'Nov.', 'Dic.'];
 	var date = new Date(dateStr);
 	var month = date.getMonth();
 	var day = date.getDate().toString().padStart(2, '0');

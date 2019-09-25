@@ -39,12 +39,13 @@
 
 	<!-- HIGHEST SCHOOL LEVEL-->
 	<% var highest_school_level = ["PRIMARIO","SECUNDARIO","TECNICO","UNIVERSITARIO","POSTGRADUADO","DOCTORADO","OTRO"] %>
+	<% var highest_school_level_names = ["Primario","Secundario","Técnico","Universitario","Postgraduado","Doctorado","Otro"] %>
 	<div class="input-field col s12 m6">
 		<select id="highest_school_level" class="validate">
 			<option value=""></option>
-			<% highest_school_level.forEach(function(val) { %>
-				<option value="<%= val %>" <%if(val==profile.highest_school_level){%>selected<%}%>><%= val.firstUpper() %></option>
-			<% }); %>
+			<% for(var i=0; i<highest_school_level.length; i++) { %>
+				<option value="<%= highest_school_level[i] %>" <%if(highest_school_level[i]==profile.highest_school_level){%>selected<%}%>><%= highest_school_level_names[i] %></option>
+			<% } %>
 		</select>
 		<label for="highest_school_level">¿Cuál es su nivel escolar?</label>
 	</div>

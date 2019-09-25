@@ -55,14 +55,14 @@ class Service
 
 		$sql_survey_total_choosen = "
 			SELECT total FROM (
-				SELECT COUNT(_survey_answer_choosen.answer) as total, (
+				SELECT COUNT(_survey_answer_choosen.answer) AS total, (
 					SELECT _survey_question.survey
 					FROM _survey_question
 					WHERE _survey_question.id = (
 						SELECT _survey_answer.question
 						FROM _survey_answer
 						WHERE _survey_answer.id = _survey_answer_choosen.answer)
-					) as survey_id
+					) AS survey_id
 				FROM _survey_answer_choosen
 				WHERE _survey_answer_choosen.person_id = '{$request->person->id}'
 				GROUP BY survey_id
@@ -73,11 +73,10 @@ class Service
 		$surveys = Connection::query("
 			SELECT
 				survey,
-				survey_title as title,
-				survey_deadline as deadline,
-				coalesce(($sql_survey_total_choosen),0) / ($sql_survey_total_questions) * 100 as completion,
-				survey_value as value
-			FROM ($sql_survey_datails) as subq
+				survey_title AS title,
+				survey_deadline AS deadline,
+				survey_value AS value
+			FROM ($sql_survey_datails) AS subq
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);");
 
 		// message if there are not opened surveys
@@ -91,6 +90,7 @@ class Service
 		}
 
 		// send response to the user
+		$response->setCache("day");
 		$response->setTemplate('list.ejs', ['surveys' => $surveys]);
 	}
 
@@ -108,8 +108,8 @@ class Service
 		//get the list of surveys answered
 		$completed = Connection::query("
 			SELECT person_id, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT person_id, survey, COUNT(survey) as responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
-			LEFT JOIN (SELECT survey, COUNT(survey) as total FROM _survey_question GROUP BY survey) B
+			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
+			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
 			ON A.survey = C.id
@@ -125,10 +125,11 @@ class Service
 			]);
 		}
 
+		// encode as UTF-8
 		foreach($completed as $survey) $survey->title = utf8_encode($survey->title);
 
 		// send response to the user
-		$response->setCache(12 * 60 * 60);
+		$response->setCache("day");
 		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
 	}
 
