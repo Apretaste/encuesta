@@ -9,7 +9,7 @@ class Service
 	 *
 	 * @author salvipascual
 	 */
-	public function _main (Request $request, Response $response)
+	public function _main(Request $request, Response $response)
 	{
 		// redirect to the list of surveys opened
 		$this->_lista($request, $response);
@@ -20,7 +20,7 @@ class Service
 	 *
 	 * @author salvipascual
 	 */
-	public function _perfil (Request $request, Response $response)
+	public function _perfil(Request $request, Response $response)
 	{
 		// prepare response for the view
 		return $response->setTemplate('profile.ejs', ["profile" => $request->person]);
@@ -29,13 +29,19 @@ class Service
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @return void
+	 * @param \Request  $request
+	 * @param \Response $response
+	 *
+	 * @return \Response
+	 * @throws \Exception
 	 * @author salvipascual
 	 */
-	public function _lista (Request $request, Response $response)
+	public function _lista(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
+		if ($this->isProfileIncomplete($request)) {
+			return $this->_perfil($request, $response);
+		}
 
 		// subqueries for the opened surveys
 		$sql_survey_datails = "
@@ -99,10 +105,12 @@ class Service
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _terminadas (Request $request, Response $response)
+	public function _terminadas(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
+		if ($this->isProfileIncomplete($request)) {
+			return $this->_perfil($request, $response);
+		}
 
 		//get the list of surveys answered
 		$completed = Connection::query("
@@ -125,7 +133,9 @@ class Service
 		}
 
 		// encode as UTF-8
-		foreach($completed as $survey) $survey->title = utf8_encode($survey->title);
+		foreach ($completed as $survey) {
+			$survey->title = utf8_encode($survey->title);
+		}
 
 		// send response to the user
 		$response->setCache("day");
@@ -138,10 +148,12 @@ class Service
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _ver (Request $request, Response $response)
+	public function _ver(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) return $this->_perfil($request, $response);
+		if ($this->isProfileIncomplete($request)) {
+			return $this->_perfil($request, $response);
+		}
 
 		// get the survey details
 		$res = Connection::query("
@@ -169,7 +181,9 @@ class Service
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
-		if (empty($res) || !isset($res[0])) return;
+		if (empty($res) || !isset($res[0])) {
+			return;
+		}
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
@@ -229,10 +243,12 @@ class Service
 	 * @return void
 	 * @throws \Exception
 	 */
-	public function _responder (Request $request, Response $response)
+	public function _responder(Request $request, Response $response)
 	{
 		// do not continue if data is not passed
-		if (empty($request->input->data->answers)) return;
+		if (empty($request->input->data->answers)) {
+			return;
+		}
 
 		// get the question IDs for the answers received
 		$answers = implode(",", $request->input->data->answers);
@@ -256,6 +272,9 @@ class Service
 		}
 
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
+
+			Challenges::complete("view-current-contests", $request->person->id);
+
 			return $response->setTemplate('message.ejs', [
 				"header" => "Encuesta completada",
 				"icon" => "sentiment_very_satisfied",
@@ -286,23 +305,23 @@ class Service
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 		}
 
-/* @NOTE: REFERRED CREDITS CLOSED DOWN FOR NOW 
+		/* @NOTE: REFERRED CREDITS CLOSED DOWN FOR NOW
 
-		// if there is a referred, add it to the table and grant credits
-		if (!empty($request->input->data->friend)) {
-			$friend = Utils::getPerson($request->input->data->friend);
-			if ($friend && $friend->id !== $request->person->id) {
-				// amount of referred credits
-				$credit = 1;
+				// if there is a referred, add it to the table and grant credits
+				if (!empty($request->input->data->friend)) {
+					$friend = Utils::getPerson($request->input->data->friend);
+					if ($friend && $friend->id !== $request->person->id) {
+						// amount of referred credits
+						$credit = 1;
 
-				// add credits to the friend
-				Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$request->person->username} a nuestra encuesta. Gracias!");
+						// add credits to the friend
+						Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$request->person->username} a nuestra encuesta. Gracias!");
 
-				// add refer record to the table
-				Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) VALUES ({$request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
-			}
-		}
-*/
+						// add refer record to the table
+						Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) VALUES ({$request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
+					}
+				}
+		*/
 	}
 
 	/**
