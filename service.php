@@ -273,7 +273,7 @@ class Service
 
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
 
-			Challenges::complete("view-current-contests", $request->person->id);
+			Challenges::complete("fill-survey", $request->person->id);
 
 			return $response->setTemplate('message.ejs', [
 				"header" => "Encuesta completada",
