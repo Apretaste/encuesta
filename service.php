@@ -299,6 +299,7 @@ class Service
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
 			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+			Challenges::complete("fill-survey", $request->person->id);
 		}
 
 		// complete the challenge
