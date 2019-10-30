@@ -246,9 +246,7 @@ class Service
 	public function _responder(Request $request, Response $response)
 	{
 		// do not continue if data is not passed
-		if (empty($request->input->data->answers)) {
-			return;
-		}
+		if (empty($request->input->data->answers)) return;
 
 		// get the question IDs for the answers received
 		$answers = implode(",", $request->input->data->answers);
@@ -271,10 +269,8 @@ class Service
 			]);
 		}
 
+		// do not let the user get double credits
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-
-			Challenges::complete("fill-survey", $request->person->id);
-
 			return $response->setTemplate('message.ejs', [
 				"header" => "Encuesta completada",
 				"icon" => "sentiment_very_satisfied",
@@ -304,6 +300,12 @@ class Service
 			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 		}
+
+		// complete the challenge
+		Challenges::complete("fill-survey", $request->person->id);
+
+		// add the experience
+		Level::setExperience('FINISH_SURVEY', $request->person->id);
 
 		/* @NOTE: REFERRED CREDITS CLOSED DOWN FOR NOW
 
