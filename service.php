@@ -344,7 +344,7 @@ class Service
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
 			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$personID') B");
 
-		return $res[0]->total === $res[0]->answers;
+		return $res[0]->total * 1 === $res[0]->answers * 1;
 	}
 
 	/**
