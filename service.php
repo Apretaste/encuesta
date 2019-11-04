@@ -132,11 +132,6 @@ class Service
 			]);
 		}
 
-		// encode as UTF-8
-		foreach ($completed as $survey) {
-			$survey->title = utf8_encode($survey->title);
-		}
-
 		// send response to the user
 		$response->setCache("day");
 		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
@@ -198,7 +193,7 @@ class Service
 		// create a new Survey object
 		$survey = new stdClass();
 		$survey->id = $res[0]->survey;
-		$survey->title = utf8_encode($res[0]->survey_title);
+		$survey->title = $res[0]->survey_title;
 		$survey->details = $res[0]->survey_details;
 		$survey->value = $res[0]->survey_value;
 		$survey->questions = [];
@@ -211,7 +206,7 @@ class Service
 			if (empty($question) || $question->id != $r->question) {
 				$question = new stdClass();
 				$question->id = $r->question;
-				$question->title = utf8_encode($r->question_title);
+				$question->title = $r->question_title;
 				$question->answers = [];
 				$question->completed = false;
 				$survey->questions[] = $question;
@@ -220,7 +215,7 @@ class Service
 			// create the answers for the question
 			$answer = new stdClass();
 			$answer->id = $r->answer;
-			$answer->title = utf8_encode($r->answer_title);
+			$answer->title = $r->answer_title;
 			$answer->choosen = $r->choosen == '1';
 
 			// mark question as completed
@@ -297,7 +292,11 @@ class Service
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}");
+			// transfer the funds
+			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}";
+			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", $msg);
+
+			// add a new response to the counter
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 
 			// complete the challenge
@@ -305,28 +304,7 @@ class Service
 
 			// add the experience
 			Level::setExperience('FINISH_SURVEY', $request->person->id);
-
 		}
-
-
-
-		/* @NOTE: REFERRED CREDITS CLOSED DOWN FOR NOW
-
-				// if there is a referred, add it to the table and grant credits
-				if (!empty($request->input->data->friend)) {
-					$friend = Utils::getPerson($request->input->data->friend);
-					if ($friend && $friend->id !== $request->person->id) {
-						// amount of referred credits
-						$credit = 1;
-
-						// add credits to the friend
-						Money::transfer(Money::BANK, $friend->id, $credit, 'ENCUESTA REFERIR', "Ha ganado §$credit por referir a @{$request->person->username} a nuestra encuesta. Gracias!");
-
-						// add refer record to the table
-						Connection::query("INSERT INTO _survey_referred (person_id, survey_id, referred, credit) VALUES ({$request->person->id}, {$survey->id}, '{$friend->email}', $credit)");
-					}
-				}
-		*/
 	}
 
 	/**
