@@ -292,8 +292,14 @@ class Service
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
+			// double credits if you are level Esmeralda or higer
+			if($request->person->level >= Level::ESMERALDA) {
+				$survey->value *= 2;
+				$msg = "Gracias a su nivel, los créditos se han duplicado.";
+			}
+
 			// transfer the funds
-			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}";
+			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
 			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", $msg);
 
 			// add a new response to the counter
