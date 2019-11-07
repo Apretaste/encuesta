@@ -292,18 +292,66 @@ class Service
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
+			$msg = "";
+
 			// double credits if you are level Esmeralda or higer
 			if($request->person->level >= Level::ESMERALDA) {
 				$survey->value *= 2;
-				$msg = "Gracias a su nivel, los créditos se han duplicado.";
+				$msg .= "Gracias a su nivel, los créditos se han duplicado. ";
+			}
+
+			// run powers for amulet ENCUESTAX2
+			if(Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
+				$survey->value *= 2;
+				$msg .= "Los poderes del amuleto del Druida duplicaron los créditos. ";
+			}
+
+			// run powers for amulet ENCUESTAS
+			if(Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
+				// calculate a random number
+				$seed = rand(1, 6);
+
+				// 3 tickets para la rifa
+				if($seed === 1) {
+					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})";
+					$msg .= "Los poderes del amuleto del Druida te regalan 3 tickets para la rifa";
+				}
+				// 1 ticket para la rifa
+				elseif($seed === 2) {
+					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})";
+					$msg .= "Los poderes del amuleto del Druida te regalan 1 ticket para la rifa";
+				}
+				// 3 flores
+				elseif($seed === 3) {
+					Connection::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
+					$msg .= "Los poderes del amuleto del Druida te regalan 3 flores para Piropazo";
+				}
+				// 1 flor
+				elseif($seed === 4) {
+					Connection::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
+					$msg .= "Los poderes del amuleto del Druida te regalan 1 flor para Piropazo";
+				}
+				// 3 corazones
+				elseif($seed === 5) {
+					Connection::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
+					$msg .= "Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo";
+				}
+				// 1 de crédito
+				else {
+					$survey->value++;
+					$msg .= "Los poderes del amuleto del Druida te regalan §1 de crédito";
+				}
 			}
 
 			// transfer the funds
-			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
-			Money::transfer(Money::BANK, $request->person->id, $survey->value, "ENCUESTA {$survey->id}", $msg);
+			MoneyNew::send(MoneyNew::BANK, $request->person->id, $survey->value, "Encuesta completada");
 
 			// add a new response to the counter
 			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+
+			// notify the user
+			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
+			Utils::addNotification($request->person->id, $msg, '{"command":"ENCUESTA TERMINADAS"}', 'attach_money');
 
 			// complete the challenge
 			Challenges::complete("fill-survey", $request->person->id);
