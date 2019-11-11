@@ -1,6 +1,5 @@
 <?php
 
-use Apretaste\Money;
 
 class Service
 {
@@ -141,6 +140,7 @@ class Service
 	 * Display a survey to answer it
 	 *
 	 * @return void
+	 * @throws \Exception
 	 * @author salvipascual
 	 */
 	public function _ver(Request $request, Response $response)
@@ -241,7 +241,9 @@ class Service
 	public function _responder(Request $request, Response $response)
 	{
 		// do not continue if data is not passed
-		if (empty($request->input->data->answers)) return;
+		if (empty($request->input->data->answers)) {
+			return;
+		}
 
 		// get the question IDs for the answers received
 		$answers = implode(",", $request->input->data->answers);
@@ -295,44 +297,44 @@ class Service
 			$msg = "";
 
 			// double credits if you are level Esmeralda or higer
-			if($request->person->level >= Level::ESMERALDA) {
+			if ($request->person->level >= Level::ESMERALDA) {
 				$survey->value *= 2;
 				$msg .= "Gracias a su nivel, los créditos se han duplicado. ";
 			}
 
 			// run powers for amulet ENCUESTAX2
-			if(Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
+			if (Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
 				$survey->value *= 2;
 				$msg .= "Los poderes del amuleto del Druida duplicaron los créditos. ";
 			}
 
 			// run powers for amulet ENCUESTAS
-			if(Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
+			if (Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
 				// calculate a random number
 				$seed = rand(1, 6);
 
 				// 3 tickets para la rifa
-				if($seed === 1) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})";
+				if ($seed === 1) {
+					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 tickets para la rifa";
 				}
 				// 1 ticket para la rifa
-				elseif($seed === 2) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})";
+				elseif ($seed === 2) {
+					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
 					$msg .= "Los poderes del amuleto del Druida te regalan 1 ticket para la rifa";
 				}
 				// 3 flores
-				elseif($seed === 3) {
+				elseif ($seed === 3) {
 					Connection::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 flores para Piropazo";
 				}
 				// 1 flor
-				elseif($seed === 4) {
+				elseif ($seed === 4) {
 					Connection::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 1 flor para Piropazo";
 				}
 				// 3 corazones
-				elseif($seed === 5) {
+				elseif ($seed === 5) {
 					Connection::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo";
 				}
