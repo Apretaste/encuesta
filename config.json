@@ -1,8 +1,9 @@
 {
 	"name": "encuesta",
-	"version": 10,
 	"description": "Permite opinar sobre lo más importante del acontener social, político y cultural de Cuba, y obtener créditos de Apretaste.",
 	"category": "social",
 	"creator": "salvi@apretaste.org",
-	"listed": true
+	"listed": true,
+	"guest": true,
+	"caption": "Encuestas"
 }

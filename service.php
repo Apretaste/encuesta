@@ -1,5 +1,8 @@
 <?php
 
+use Framework\Database;
+use Apretaste\Request;
+use Apretaste\Response;
 
 class Service
 {
@@ -8,7 +11,7 @@ class Service
 	 *
 	 * @author salvipascual
 	 */
-	public function _main(Request $request, Response $response)
+	public function _main(Request $request, Response &$response)
 	{
 		// redirect to the list of surveys opened
 		$this->_lista($request, $response);
@@ -19,23 +22,22 @@ class Service
 	 *
 	 * @author salvipascual
 	 */
-	public function _perfil(Request $request, Response $response)
+	public function _perfil(Request $request, Response &$response)
 	{
 		// prepare response for the view
-		return $response->setTemplate('profile.ejs', ["profile" => $request->person]);
+		$response->setTemplate('profile.ejs', ["profile" => $request->person]);
 	}
 
 	/**
 	 * Get the list of surveys opened
 	 *
 	 * @param \Request  $request
-	 * @param \Response $response
+	 * @param \Response &$response
 	 *
-	 * @return \Response
 	 * @throws \Exception
 	 * @author salvipascual
 	 */
-	public function _lista(Request $request, Response $response)
+	public function _lista(Request $request, Response &$response)
 	{
 		// ensure your profile is completed
 		if ($this->isProfileIncomplete($request)) {
@@ -75,7 +77,7 @@ class Service
 			WHERE survey_id = subq.survey";
 
 		// get list of opened surveys
-		$surveys = Connection::query("
+		$surveys = Database::query("
 			SELECT
 				survey,
 				survey_title AS title,
@@ -86,12 +88,13 @@ class Service
 
 		// message if there are not opened surveys
 		if (empty($surveys)) {
-			return $response->setTemplate('message.ejs', [
+			$response->setTemplate('message.ejs', [
 				"header" => "No hay encuestas",
 				"icon"   => "sentiment_very_dissatisfied",
 				"text"   => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
 				"button" => ["href" => "ENCUESTA TERMINADAS", "caption" => "Ver Terminadas"],
 			]);
+			return;
 		}
 
 		// send response to the user
@@ -104,7 +107,7 @@ class Service
 	 * @return void
 	 * @author salvipascual
 	 */
-	public function _terminadas(Request $request, Response $response)
+	public function _terminadas(Request $request, Response &$response)
 	{
 		// ensure your profile is completed
 		if ($this->isProfileIncomplete($request)) {
@@ -112,7 +115,7 @@ class Service
 		}
 
 		//get the list of surveys answered
-		$completed = Connection::query("
+		$completed = Database::query("
 			SELECT person_id, responses, total, C.title, C.value, A.inserted
 			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
@@ -123,12 +126,13 @@ class Service
 
 		// message if there are not opened surveys
 		if (empty($completed)) {
-			return $response->setTemplate('message.ejs', [
+			$response->setTemplate('message.ejs', [
 				"header" => "No ha completado encuestas",
 				"icon" => "sentiment_neutral",
 				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
+			return;
 		}
 
 		// send response to the user
@@ -143,7 +147,7 @@ class Service
 	 * @throws \Exception
 	 * @author salvipascual
 	 */
-	public function _ver(Request $request, Response $response)
+	public function _ver(Request $request, Response &$response)
 	{
 		// ensure your profile is completed
 		if ($this->isProfileIncomplete($request)) {
@@ -151,7 +155,7 @@ class Service
 		}
 
 		// get the survey details
-		$res = Connection::query("
+		$res = Database::query("
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
@@ -182,12 +186,13 @@ class Service
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
-			return $response->setTemplate('message.ejs', [
+			$response->setTemplate('message.ejs', [
 				"header" => "¡Chócala! Ya respondió esta encuesta",
 				"icon" => "pan_tool",
 				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
+			return;
 		}
 
 		// create a new Survey object
@@ -238,7 +243,7 @@ class Service
 	 * @return void
 	 * @throws \Exception
 	 */
-	public function _responder(Request $request, Response $response)
+	public function _responder(Request $request, Response &$response)
 	{
 		// do not continue if data is not passed
 		if (empty($request->input->data->answers)) {
@@ -247,10 +252,10 @@ class Service
 
 		// get the question IDs for the answers received
 		$answers = implode(",", $request->input->data->answers);
-		$questions = Connection::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
+		$questions = Database::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
-		$survey = Connection::query("
+		$survey = Database::query("
 			SELECT A.id, A.value, A.title
 			FROM _survey A
 			JOIN _survey_question B
@@ -258,22 +263,24 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		if (!isset($survey->id)) {
-			return $response->setTemplate('message.ejs', [
+			$response->setTemplate('message.ejs', [
 				"header" => "Encuesta no encontrada",
 				"icon" => "sentiment_very_dissatisfied",
 				"text" => "Hubo un error procesando su respuesta. Es posible que la app esté desincronizada. Por favor abra los ajustes y borre los datos guardados. Si el problema persiste, contacte al soporte técnico.",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
+			return;
 		}
 
 		// do not let the user get double credits
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			return $response->setTemplate('message.ejs', [
+			$response->setTemplate('message.ejs', [
 				"header" => "Encuesta completada",
 				"icon" => "sentiment_very_satisfied",
 				"text" => "Esta encuesta ha sido completada por usted anteriormente y se le ha asignado el crédito. No es necesario hacer nada mas. ¡Gracias!",
 				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
 			]);
+			return;
 		}
 
 		// prepare the data to be sent in one large query
@@ -286,7 +293,7 @@ class Service
 		$values = implode(",", $values);
 
 		// replace all old answers by the new answers in one query
-		Connection::query("
+		Database::query("
 			START TRANSACTION;
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
@@ -315,27 +322,27 @@ class Service
 
 				// 3 tickets para la rifa
 				if ($seed === 1) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
+					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 tickets para la rifa";
 				}
 				// 1 ticket para la rifa
 				elseif ($seed === 2) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
+					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
 					$msg .= "Los poderes del amuleto del Druida te regalan 1 ticket para la rifa";
 				}
 				// 3 flores
 				elseif ($seed === 3) {
-					Connection::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
+					Database::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 flores para Piropazo";
 				}
 				// 1 flor
 				elseif ($seed === 4) {
-					Connection::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
+					Database::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 1 flor para Piropazo";
 				}
 				// 3 corazones
 				elseif ($seed === 5) {
-					Connection::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
+					Database::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
 					$msg .= "Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo";
 				}
 				// 1 de crédito
@@ -349,7 +356,7 @@ class Service
 			MoneyNew::send(MoneyNew::BANK, $request->person->id, $survey->value, "Encuesta completada");
 
 			// add a new response to the counter
-			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 
 			// notify the user
 			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
@@ -373,7 +380,7 @@ class Service
 	 */
 	private function isSurveyComplete($surveyID, $personID)
 	{
-		$res = Connection::query("
+		$res = Database::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
 			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$personID') B");
