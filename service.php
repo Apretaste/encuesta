@@ -360,7 +360,8 @@ class Service
 
 			// notify the user
 			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
-			Utils::addNotification($request->person->id, $msg, '{"command":"ENCUESTA TERMINADAS"}', 'attach_money');
+
+			Notifications::alert($request->person->id, $msg, 'attach_money', '{"command":"ENCUESTA TERMINADAS"}');
 
 			// complete the challenge
 			Challenges::complete("fill-survey", $request->person->id);
