@@ -31,7 +31,7 @@ class Service
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @param \Request  $request
+	 * @param \Request $request
 	 * @param \Response &$response
 	 *
 	 * @throws \Exception
@@ -90,8 +90,8 @@ class Service
 		if (empty($surveys)) {
 			$response->setTemplate('message.ejs', [
 				"header" => "No hay encuestas",
-				"icon"   => "sentiment_very_dissatisfied",
-				"text"   => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
+				"icon" => "sentiment_very_dissatisfied",
+				"text" => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
 				"button" => ["href" => "ENCUESTA TERMINADAS", "caption" => "Ver Terminadas"],
 			]);
 			return;
