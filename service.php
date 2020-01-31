@@ -4,6 +4,7 @@ use Apretaste\Money;
 use Framework\Database;
 use Apretaste\Request;
 use Apretaste\Response;
+use Apretaste\Level;
 
 class Service
 {
