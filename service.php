@@ -1,5 +1,6 @@
 <?php
 
+use Apretaste\Money;
 use Framework\Database;
 use Apretaste\Request;
 use Apretaste\Response;
@@ -353,7 +354,7 @@ class Service
 			}
 
 			// transfer the funds
-			MoneyNew::send(MoneyNew::BANK, $request->person->id, $survey->value, "Encuesta completada");
+			Money::send(Money::BANK, $request->person->id, $survey->value, "Encuesta completada");
 
 			// add a new response to the counter
 			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
