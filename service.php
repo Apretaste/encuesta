@@ -400,7 +400,7 @@ class Service
 	private function isProfileIncomplete($request)
 	{
 		return $request->person->age < 5 || $request->person->age > 130
-			|| empty($request->person->province)
+			|| (empty($request->person->province) && strtoupper($request->person->countryCode) === "CU")
 			|| empty($request->person->skin)
 			|| empty($request->person->education);
 	}
