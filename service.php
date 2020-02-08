@@ -402,6 +402,6 @@ class Service
 		return $request->person->age < 5 || $request->person->age > 130
 			|| empty($request->person->province)
 			|| empty($request->person->skin)
-			|| empty($request->person->highest_school_level);
+			|| empty($request->person->education);
 	}
 }

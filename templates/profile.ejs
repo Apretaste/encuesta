@@ -19,7 +19,7 @@
 		<select id="year_of_birth" class="validate">
 			<option value=""></option>
 			<% getYears().forEach(function(year) { %>
-				<option value="<%= year %>" <%if(profile.year_of_birth==year){%>selected<%}%>><%= year %></option>
+				<option value="<%= year %>" <%if(profile.yearOfBirth==year){%>selected<%}%>><%= year %></option>
 			<% }); %>
 		</select>
 		<label for="year_of_birth">¿Qué año nacistes?</label>
@@ -44,7 +44,7 @@
 		<select id="highest_school_level" class="validate">
 			<option value=""></option>
 			<% for(var i=0; i<highest_school_level.length; i++) { %>
-				<option value="<%= highest_school_level[i] %>" <%if(highest_school_level[i]==profile.highest_school_level){%>selected<%}%>><%= highest_school_level_names[i] %></option>
+				<option value="<%= highest_school_level[i] %>" <%if(highest_school_level[i]==profile.education){%>selected<%}%>><%= highest_school_level_names[i] %></option>
 			<% } %>
 		</select>
 		<label for="highest_school_level">¿Cuál es su nivel escolar?</label>
