@@ -5,6 +5,7 @@ use Framework\Database;
 use Apretaste\Request;
 use Apretaste\Response;
 use Apretaste\Level;
+use Apretaste\Amulets;
 
 class Service
 {
