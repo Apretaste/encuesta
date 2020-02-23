@@ -1,8 +1,11 @@
 <?php
 
+use Apretaste\Money;
 use Framework\Database;
 use Apretaste\Request;
 use Apretaste\Response;
+use Apretaste\Level;
+use Apretaste\Amulets;
 
 class Service
 {
@@ -353,7 +356,7 @@ class Service
 			}
 
 			// transfer the funds
-			MoneyNew::send(MoneyNew::BANK, $request->person->id, $survey->value, "Encuesta completada");
+			Money::send(Money::BANK, $request->person->id, $survey->value, "Encuesta completada");
 
 			// add a new response to the counter
 			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
@@ -398,8 +401,8 @@ class Service
 	private function isProfileIncomplete($request)
 	{
 		return $request->person->age < 5 || $request->person->age > 130
-			|| empty($request->person->province)
+			|| (empty($request->person->province) && strtoupper($request->person->countryCode) === "CU")
 			|| empty($request->person->skin)
-			|| empty($request->person->highest_school_level);
+			|| empty($request->person->education);
 	}
 }
