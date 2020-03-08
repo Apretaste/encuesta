@@ -7,6 +7,7 @@ use Apretaste\Response;
 use Apretaste\Level;
 use Apretaste\Amulets;
 use Apretaste\Notifications;
+use Apretaste\Challenges;
 
 class Service
 {
