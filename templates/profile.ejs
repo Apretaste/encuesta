@@ -21,7 +21,8 @@
 		<select id="year_of_birth" class="validate">
 			<option value=""></option>
 			<% getYears().forEach(function(year) { %>
-				<option value="<%= year %>" <%if(year_selected==year){%>selected<%}%>><%= year %></option>
+				<% var selected = year_selected==year ? 'selected' : '' %>
+				<option <%= selected %> value="<%= year %>"><%= year %></option>
 			<% }); %>
 		</select>
 		<label for="year_of_birth">¿En qué año naciste?</label>
@@ -32,7 +33,8 @@
 		<select id="skin" class="validate">
 			<option value=""></option>
 			<% Object.keys(race).forEach(function(key){ %>
-				<option value="<%= key %>" <%if(key==race_selected){%>selected<%}%>><%= race[key] %></option>
+				<% var selected = key==race_selected ? 'selected' : '' %>
+				<option <%= selected %> value="<%= key %>"><%= race[key] %></option>
 			<% }); %>
 		</select>
 		<label for="skin">¿Cuál es tu color de piel?</label>
@@ -43,7 +45,8 @@
 		<select id="highest_school_level" class="validate">
 			<option value=""></option>
 			<% Object.keys(education).forEach(function(key){ %>
-				<option value="<%= key %>" <%if(key==education_selected){%>selected<%}%>><%= education[key] %></option>
+				<% var selected = key==education_selected ? 'selected' : '' %>
+				<option <%= selected %> value="<%= key %>"><%= education[key] %></option>
 			<% }) %>
 		</select>
 		<label for="highest_school_level">¿Cuál es su nivel escolar?</label>
@@ -54,7 +57,8 @@
 		<select id="province" class="validate">
 			<option value=""></option>
 			<% Object.keys(province).forEach(function(key){ %>
-				<option value="<%= key %>" <%if(key==province_selected){%>selected<%}%>><%= province[key] %></option>
+				<% var selected = key==province_selected ? 'selected' : '' %>
+				<option <%= selected %> value="<%= key %>"><%= province[key] %></option>
 			<% }) %>
 		</select>
 		<label for="province">¿En qué provincia vives?</label>
@@ -65,7 +69,8 @@
 		<select id="marital_status" class="validate">
 			<option value=""></option>
 			<% Object.keys(marital).forEach(function(key){ %>
-				<option value="<%= key %>" <%if(key==marital_selected){%>selected<%}%>><%= marital[key] %></option>
+				<% var selected = key==marital_selected ? 'selected' : '' %>
+				<option <%= selected %> value="<%= key %>"><%= marital[key] %></option>
 			<% }) %>
 		</select>
 		<label for="marital_status">¿Cuál es tu estado civil?</label>
@@ -76,7 +81,8 @@
 		<select id="occupation" class="validate">
 			<option value=""></option>
 			<% Object.keys(occupation).forEach(function(key){ %>
-				<option value="<%= key %>" <%if(key==occupation_selected){%>selected<%}%>><%= occupation[key] %></option>
+				<% var selected = key==occupation_selected ? 'selected' : '' %>
+				<option <%= selected %> value="<%= key %>"><%= occupation[key] %></option>
 			<% }) %>
 		</select>
 		<label for="occupation">¿A qué te dedicas?</label>
