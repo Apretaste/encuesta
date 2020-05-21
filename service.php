@@ -37,13 +37,13 @@ class Service
 	{
 		// create content array
 		$content = [
-			'gender_selected' => $request->person->gender,
-			'year_selected' => $request->person->yearOfBirth,
-			'race_selected' => $request->person->skin,
-			'occupation_selected' => $request->person->occupation,
-			'education_selected' => $request->person->education,
-			'province_selected' => $request->person->provinceCode,
-			'marital_selected' => $request->person->maritalStatus
+			'gender_selected' => $request->person->gender ?? '',
+			'year_selected' => $request->person->yearOfBirth ?? '',
+			'race_selected' => $request->person->skin ?? '',
+			'occupation_selected' => $request->person->occupation ?? '',
+			'education_selected' => $request->person->education ?? '',
+			'province_selected' => $request->person->provinceCode ?? '',
+			'marital_selected' => $request->person->maritalStatus ?? ''
 		];
 
 		// prepare response for the view
