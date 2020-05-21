@@ -1,22 +1,23 @@
 <?php
 
 use Apretaste\Money;
-use Framework\Database;
+use Apretaste\Level;
+use Apretaste\Person;
+use Apretaste\Amulets;
 use Apretaste\Request;
 use Apretaste\Response;
-use Apretaste\Level;
-use Apretaste\Amulets;
-use Apretaste\Notifications;
 use Apretaste\Challenges;
+use Apretaste\Notifications;
+use Framework\Core;
+use Framework\Database;
 
 class Service
 {
-
 	/**
 	 * Main service
 	 *
-	 * @param \Apretaste\Request $request
-	 * @param \Apretaste\Response $response
+	 * @paramRequest$request
+	 * @paramResponse$response
 	 *
 	 * @throws \Exception
 	 * @author salvipascual
@@ -34,15 +35,26 @@ class Service
 	 */
 	public function _perfil(Request $request, Response &$response)
 	{
+		// create content array
+		$content = [
+			'gender_selected' => $request->person->gender,
+			'year_selected' => $request->person->yearOfBirth,
+			'race_selected' => $request->person->skin,
+			'occupation_selected' => $request->person->occupation,
+			'education_selected' => $request->person->education,
+			'province_selected' => $request->person->provinceCode,
+			'marital_selected' => $request->person->maritalStatus
+		];
+
 		// prepare response for the view
-		$response->setTemplate('profile.ejs', ['profile' => $request->person]);
+		$response->setTemplate('profile.ejs', $content);
 	}
 
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @param \Apretaste\Request $request
-	 * @param \Apretaste\Response $response
+	 * @paramRequest$request
+	 * @paramResponse$response
 	 *
 	 * @throws \Framework\Alert
 	 * @author salvipascual
@@ -50,7 +62,7 @@ class Service
 	public function _lista(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
+		if ($this->isProfileIncomplete($request->person)) {
 			$this->_perfil($request, $response);
 			return;
 		}
@@ -115,17 +127,14 @@ class Service
 	/**
 	 * Display a list of previous surveys
 	 *
-	 * @param  \Apretaste\Request  $request
-	 * @param  \Apretaste\Response  $response
-	 *
-	 * @return void
-	 * @throws \Framework\Alert
 	 * @author salvipascual
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _terminadas(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
+		if ($this->isProfileIncomplete($request->person)) {
 			$this->_perfil($request, $response);
 			return;
 		}
@@ -142,13 +151,12 @@ class Service
 
 		// message if there are not opened surveys
 		if (empty($completed)) {
-			$response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				'header' => 'No ha completado encuestas',
 				'icon' => 'sentiment_neutral',
 				'text' => 'Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.',
 				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
-			return;
 		}
 
 		// send response to the user
@@ -159,17 +167,14 @@ class Service
 	/**
 	 * Display a survey to answer it
 	 *
-	 * @param  \Apretaste\Request  $request
-	 * @param  \Apretaste\Response  $response
-	 *
-	 * @return void
-	 * @throws \Framework\Alert
 	 * @author salvipascual
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _ver(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
+		if ($this->isProfileIncomplete($request->person)) {
 			return $this->_perfil($request, $response);
 		}
 
@@ -205,13 +210,12 @@ class Service
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
-			$response->setTemplate('message.ejs', [
-				'header' => '¡Chócala! Ya respondió esta encuesta',
-				'icon' => 'pan_tool',
-				'text' => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
-				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
+			return $response->setTemplate('message.ejs', [
+				'header' => '¡Genial! Ya respondió esta encuesta',
+				'icon' => 'thumb_up',
+				'text' => "Usted ya respondió esta encuesta y como agradecimiento le agregamos §{$res[0]->survey_value} a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.",
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas'],
 			]);
-			return;
 		}
 
 		// create a new Survey object
@@ -421,11 +425,15 @@ class Service
 	 * @return Boolean, true if profile is incomplete
 	 * @author salvipascual
 	 */
-	private function isProfileIncomplete($request)
+	private function isProfileIncomplete(Person $person)
 	{
-		return $request->person->age < 5 || $request->person->age > 130
-			|| (empty($request->person->province) && strtoupper($request->person->countryCode) === 'CU')
-			|| empty($request->person->skin)
-			|| empty($request->person->education);
+		return $person->age < 5 
+			|| $person->age > 130
+			|| empty($person->province)
+			|| empty($person->gender)
+			|| empty($person->skin)
+			|| empty($person->maritalStatus)
+			|| empty($person->occupation)
+			|| empty($person->education);
 	}
 }

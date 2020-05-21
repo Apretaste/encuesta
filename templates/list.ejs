@@ -13,7 +13,7 @@
 			<div class="card">
 				<div class="card-content">
 					<span class="card-title"><%= item.title %></span>
-					<p>Vence el <%= formatDateTime(item.deadline + " 00:00") %></p>
+					<p>Vence el <%= moment(item.deadline).format('D [de] MMMM') + ' a las 00:00' %></p>
 					<p class="blue-grey-text">Ganarás §<%= item.value %> al completarla</p>
 				</div>
 				<div class="card-action grey lighten-4">
@@ -22,6 +22,6 @@
 			</div>
 		<% }) %>
 
-		<p class="grey-text">Las encuestas son anónimas y encriptadas. Nadie leerá tu selección.</p>
+		<p class="grey-text">Las encuestas son anónimas, totalmente confidenciales, seguras y encriptadas. Nadie leerá tus respuestas.</p>
 	</div>
 </div>
