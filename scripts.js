@@ -47,10 +47,13 @@ function submitProfileData() {
 	apretaste.send({
 		"command": "PERFIL UPDATE",
 		"data": data,
-		"redirect": false
+		"redirect": false,
+		'callback': {'name': 'callbackProfileData'}
 	});
+}
 
-	// re-open the survey
+// callback to re-load the service
+function callbackProfileData() {
 	apretaste.send({
 		command: "ENCUESTA"
 	});
