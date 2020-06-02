@@ -1,14 +1,28 @@
 <?php
 
+use Apretaste\Money;
+use Apretaste\Level;
+use Apretaste\Person;
+use Apretaste\Amulets;
+use Apretaste\Request;
+use Apretaste\Response;
+use Apretaste\Challenges;
+use Apretaste\Notifications;
+use Framework\Core;
+use Framework\Database;
 
 class Service
 {
 	/**
 	 * Main service
 	 *
+	 * @paramRequest$request
+	 * @paramResponse$response
+	 *
+	 * @throws \Exception
 	 * @author salvipascual
 	 */
-	public function _main(Request $request, Response $response)
+	public function _main(Request $request, Response &$response)
 	{
 		// redirect to the list of surveys opened
 		$this->_lista($request, $response);
@@ -19,44 +33,55 @@ class Service
 	 *
 	 * @author salvipascual
 	 */
-	public function _perfil(Request $request, Response $response)
+	public function _perfil(Request $request, Response &$response)
 	{
+		// create content array
+		$content = [
+			'gender_selected' => $request->person->gender ?? '',
+			'year_selected' => $request->person->yearOfBirth ?? '',
+			'race_selected' => $request->person->skin ?? '',
+			'occupation_selected' => $request->person->occupation ?? '',
+			'education_selected' => $request->person->education ?? '',
+			'province_selected' => $request->person->provinceCode ?? '',
+			'marital_selected' => $request->person->maritalStatus ?? ''
+		];
+
 		// prepare response for the view
-		return $response->setTemplate('profile.ejs', ["profile" => $request->person]);
+		$response->setTemplate('profile.ejs', $content);
 	}
 
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @param \Request  $request
-	 * @param \Response $response
+	 * @paramRequest$request
+	 * @paramResponse$response
 	 *
-	 * @return \Response
-	 * @throws \Exception
+	 * @throws \Framework\Alert
 	 * @author salvipascual
 	 */
 	public function _lista(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
-			return $this->_perfil($request, $response);
+		if ($this->isProfileIncomplete($request->person)) {
+			$this->_perfil($request, $response);
+			return;
 		}
 
 		// subqueries for the opened surveys
-		$sql_survey_datails = "
+		$sql_survey_datails = '
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
 				_survey.deadline as survey_deadline,
 				_survey.value as survey_value
 			FROM _survey
-			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE";
+			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE';
 
-		$sql_survey_total_questions = "
+		$sql_survey_total_questions = '
 			SELECT COUNT(_survey_question.id) AS total
 			FROM _survey_question
 			WHERE _survey_question.survey =  subq.survey
-			GROUP BY _survey_question.survey";
+			GROUP BY _survey_question.survey';
 
 		$sql_survey_total_choosen = "
 			SELECT total FROM (
@@ -75,7 +100,7 @@ class Service
 			WHERE survey_id = subq.survey";
 
 		// get list of opened surveys
-		$surveys = Connection::query("
+		$surveys = Database::query("
 			SELECT
 				survey,
 				survey_title AS title,
@@ -86,12 +111,13 @@ class Service
 
 		// message if there are not opened surveys
 		if (empty($surveys)) {
-			return $response->setTemplate('message.ejs', [
-				"header" => "No hay encuestas",
-				"icon"   => "sentiment_very_dissatisfied",
-				"text"   => "Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.",
-				"button" => ["href" => "ENCUESTA TERMINADAS", "caption" => "Ver Terminadas"],
+			$response->setTemplate('message.ejs', [
+				'header' => 'No hay encuestas',
+				'icon' => 'sentiment_very_dissatisfied',
+				'text' => 'Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.',
+				'button' => ['href' => 'ENCUESTA TERMINADAS', 'caption' => 'Ver Terminadas'],
 			]);
+			return;
 		}
 
 		// send response to the user
@@ -101,18 +127,20 @@ class Service
 	/**
 	 * Display a list of previous surveys
 	 *
-	 * @return void
 	 * @author salvipascual
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _terminadas(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
-			return $this->_perfil($request, $response);
+		if ($this->isProfileIncomplete($request->person)) {
+			$this->_perfil($request, $response);
+			return;
 		}
 
 		//get the list of surveys answered
-		$completed = Connection::query("
+		$completed = Database::query("
 			SELECT person_id, responses, total, C.title, C.value, A.inserted
 			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
@@ -124,34 +152,34 @@ class Service
 		// message if there are not opened surveys
 		if (empty($completed)) {
 			return $response->setTemplate('message.ejs', [
-				"header" => "No ha completado encuestas",
-				"icon" => "sentiment_neutral",
-				"text" => "Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.",
-				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+				'header' => 'No ha completado encuestas',
+				'icon' => 'sentiment_neutral',
+				'text' => 'Usted aún no ha completado ninguna encuesta. Cuando responda por primera vez se agregará a esta lista.',
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
 		}
 
 		// send response to the user
-		$response->setCache("day");
+		$response->setCache('day');
 		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
 	}
 
 	/**
 	 * Display a survey to answer it
 	 *
-	 * @return void
-	 * @throws \Exception
 	 * @author salvipascual
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _ver(Request $request, Response $response)
 	{
 		// ensure your profile is completed
-		if ($this->isProfileIncomplete($request)) {
+		if ($this->isProfileIncomplete($request->person)) {
 			return $this->_perfil($request, $response);
 		}
 
 		// get the survey details
-		$res = Connection::query("
+		$res = Database::query("
 			SELECT
 				_survey.id AS survey,
 				_survey.title AS survey_title,
@@ -183,10 +211,10 @@ class Service
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
 			return $response->setTemplate('message.ejs', [
-				"header" => "¡Chócala! Ya respondió esta encuesta",
-				"icon" => "pan_tool",
-				"text" => "Usted ya respondió esta encuesta, y como agradecimiento se le agregaron §{$res[0]->survey_value} a su crédito. Muchas gracias por su participación.",
-				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+				'header' => '¡Genial! Ya respondió esta encuesta',
+				'icon' => 'thumb_up',
+				'text' => "Usted ya respondió esta encuesta y como agradecimiento le agregamos §{$res[0]->survey_value} a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.",
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas'],
 			]);
 		}
 
@@ -238,7 +266,7 @@ class Service
 	 * @return void
 	 * @throws \Exception
 	 */
-	public function _responder(Request $request, Response $response)
+	public function _responder(Request $request, Response &$response)
 	{
 		// do not continue if data is not passed
 		if (empty($request->input->data->answers)) {
@@ -246,11 +274,11 @@ class Service
 		}
 
 		// get the question IDs for the answers received
-		$answers = implode(",", $request->input->data->answers);
-		$questions = Connection::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
+		$answers = implode(',', $request->input->data->answers);
+		$questions = Database::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
-		$survey = Connection::query("
+		$survey = Database::query("
 			SELECT A.id, A.value, A.title
 			FROM _survey A
 			JOIN _survey_question B
@@ -258,22 +286,24 @@ class Service
 			WHERE B.id = {$questions[0]->question}")[0];
 
 		if (!isset($survey->id)) {
-			return $response->setTemplate('message.ejs', [
-				"header" => "Encuesta no encontrada",
-				"icon" => "sentiment_very_dissatisfied",
-				"text" => "Hubo un error procesando su respuesta. Es posible que la app esté desincronizada. Por favor abra los ajustes y borre los datos guardados. Si el problema persiste, contacte al soporte técnico.",
-				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+			$response->setTemplate('message.ejs', [
+				'header' => 'Encuesta no encontrada',
+				'icon' => 'sentiment_very_dissatisfied',
+				'text' => 'Hubo un error procesando su respuesta. Es posible que la app esté desincronizada. Por favor abra los ajustes y borre los datos guardados. Si el problema persiste, contacte al soporte técnico.',
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
+			return;
 		}
 
 		// do not let the user get double credits
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			return $response->setTemplate('message.ejs', [
-				"header" => "Encuesta completada",
-				"icon" => "sentiment_very_satisfied",
-				"text" => "Esta encuesta ha sido completada por usted anteriormente y se le ha asignado el crédito. No es necesario hacer nada mas. ¡Gracias!",
-				"button" => ["href" => "ENCUESTA", "caption" => "Ver Encuestas"],
+			$response->setTemplate('message.ejs', [
+				'header' => 'Encuesta completada',
+				'icon' => 'sentiment_very_satisfied',
+				'text' => 'Esta encuesta ha sido completada por usted anteriormente y se le ha asignado el crédito. No es necesario hacer nada mas. ¡Gracias!',
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
+			return;
 		}
 
 		// prepare the data to be sent in one large query
@@ -283,10 +313,10 @@ class Service
 			$answerID = $request->input->data->answers[$i];
 			$values[] = "('{$request->person->id}', '{$request->person->email}', {$survey->id}, $questionID, $answerID)";
 		}
-		$values = implode(",", $values);
+		$values = implode(',', $values);
 
 		// replace all old answers by the new answers in one query
-		Connection::query("
+		Database::query("
 			START TRANSACTION;
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
@@ -294,18 +324,18 @@ class Service
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			$msg = "";
+			$msg = '';
 
 			// double credits if you are level Esmeralda or higer
-			if ($request->person->level >= Level::ESMERALDA) {
+			if ($request->person->levelCode >= Level::ESMERALDA) {
 				$survey->value *= 2;
-				$msg .= "Gracias a su nivel, los créditos se han duplicado. ";
+				$msg .= 'Gracias a su nivel, los créditos se han duplicado. ';
 			}
 
 			// run powers for amulet ENCUESTAX2
 			if (Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
 				$survey->value *= 2;
-				$msg .= "Los poderes del amuleto del Druida duplicaron los créditos. ";
+				$msg .= 'Los poderes del amuleto del Druida duplicaron los créditos. ';
 			}
 
 			// run powers for amulet ENCUESTAS
@@ -315,48 +345,54 @@ class Service
 
 				// 3 tickets para la rifa
 				if ($seed === 1) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
-					$msg .= "Los poderes del amuleto del Druida te regalan 3 tickets para la rifa";
+					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
+					$msg .= 'Los poderes del amuleto del Druida te regalan 3 tickets para la rifa';
 				}
 				// 1 ticket para la rifa
 				elseif ($seed === 2) {
-					Connection::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
-					$msg .= "Los poderes del amuleto del Druida te regalan 1 ticket para la rifa";
+					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
+					$msg .= 'Los poderes del amuleto del Druida te regalan 1 ticket para la rifa';
 				}
 				// 3 flores
 				elseif ($seed === 3) {
-					Connection::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
-					$msg .= "Los poderes del amuleto del Druida te regalan 3 flores para Piropazo";
+					Database::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
+					$msg .= 'Los poderes del amuleto del Druida te regalan 3 flores para Piropazo';
 				}
 				// 1 flor
 				elseif ($seed === 4) {
-					Connection::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
-					$msg .= "Los poderes del amuleto del Druida te regalan 1 flor para Piropazo";
+					Database::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
+					$msg .= 'Los poderes del amuleto del Druida te regalan 1 flor para Piropazo';
 				}
 				// 3 corazones
 				elseif ($seed === 5) {
-					Connection::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
-					$msg .= "Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo";
+					Database::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
+					$msg .= 'Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo';
 				}
 				// 1 de crédito
 				else {
 					$survey->value++;
-					$msg .= "Los poderes del amuleto del Druida te regalan §1 de crédito";
+					$msg .= 'Los poderes del amuleto del Druida te regalan §1 de crédito';
 				}
 			}
 
 			// transfer the funds
-			MoneyNew::send(MoneyNew::BANK, $request->person->id, $survey->value, "Encuesta completada");
+			Money::send(
+				Money::BANK,
+				$request->person->id,
+				$survey->value,
+				'Encuesta completada'
+			);
 
 			// add a new response to the counter
-			Connection::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
+			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 
 			// notify the user
 			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
-			Utils::addNotification($request->person->id, $msg, '{"command":"ENCUESTA TERMINADAS"}', 'attach_money');
+
+			Notifications::alert($request->person->id, $msg, 'attach_money', '{"command":"ENCUESTA TERMINADAS"}');
 
 			// complete the challenge
-			Challenges::complete("fill-survey", $request->person->id);
+			Challenges::complete('fill-survey', $request->person->id);
 
 			// add the experience
 			Level::setExperience('FINISH_SURVEY', $request->person->id);
@@ -368,12 +404,14 @@ class Service
 	 *
 	 * @param String $surveyID
 	 * @param String $personID
+	 *
 	 * @return Boolean, true if survey is 100% completed
+	 * @throws \Framework\Alert
 	 * @author salvipascual
 	 */
 	private function isSurveyComplete($surveyID, $personID)
 	{
-		$res = Connection::query("
+		$res = Database::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
 			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$personID') B");
@@ -387,11 +425,15 @@ class Service
 	 * @return Boolean, true if profile is incomplete
 	 * @author salvipascual
 	 */
-	private function isProfileIncomplete($request)
+	private function isProfileIncomplete(Person $person)
 	{
-		return $request->person->age < 5 || $request->person->age > 130
-			|| (empty($request->person->province) && strtoupper($request->person->country) === "CU")
-			|| empty($request->person->skin)
-			|| empty($request->person->highest_school_level);
+		return $person->age < 5 
+			|| $person->age > 130
+			|| empty($person->province)
+			|| empty($person->gender)
+			|| empty($person->skin)
+			|| empty($person->maritalStatus)
+			|| empty($person->occupation)
+			|| empty($person->education);
 	}
 }

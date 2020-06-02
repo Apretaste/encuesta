@@ -1,63 +1,98 @@
-<!-- LIST OF QUESTIONS -->
-<div id="list" class="row">
-	<div class="col s12">
-		<div class="row">
-			<div class="col s12">
-				<h1><%= survey.title %></h1>
-				<% if(survey.details){ %>
-					<p><%= survey.details %></p>
-				<% } %>
-			</div>
+<!-- PARTICIPANT CONSENT -->
+<div id="consent-section">
+	<div class="row">
+		<div class="col s12">
+			<h1>Consentimiento informado del participante</h1>
+			<p>Nombre del estudio: "<%= survey.title %>".</p>
+			<p>La información obtenida, nos permitirá procurar el mejor bienestar de la población cubana. Para ello, necesitamos que conteste a este cuestionario con la mayor sinceridad posible.</p>
+
+			<p>Usted debe saber que:</p>
+
+			<ul class="collection">
+				<li class="collection-item avatar"><i class="material-icons circle">looks_one</i>Su participación en este estudio es totalmente voluntaria.</li>
+				<li class="collection-item avatar"><i class="material-icons circle">looks_two</i>Su participación supondrá para usted una retribución de §<%= survey.value %> a su crédito.</li>
+				<li class="collection-item avatar"><i class="material-icons circle">looks_3</i>Todos los datos obtenidos en este estudio serán confidenciales, anónimos y totalmente seguros.</li>
+				<li class="collection-item avatar"><i class="material-icons circle">looks_4</i>La información obtenida únicamente se utilizará para los fines específicos del estudio.</li>
+				<li class="collection-item avatar"><i class="material-icons circle">looks_5</i>Una vez que comience a contestar el cuestionario, es libre de abandonar el estudio en cualquier momento, no suponiendo ningún tipo de consecuencias para usted.</li>
+			</ul>
+
+			<p>Usted declara que:</p>
+
+			<p>
+				<label>
+					<input id="accept-adult" type="checkbox" />
+					<span>Es mayor de edad (18 o más años)</span>
+				</label>
+			</p>
+			<p>
+				<label>
+					<input id="accept-participate" type="checkbox" />
+					<span>Acepta participar en este estudio</span>
+				</label>
+			</p>
 		</div>
-<!-- 
-		<div class="input-field">
-			<input id="friend" type="email"/>
-			<label for="friend">¿Quién le refirió?</label>
-			<span class="helper-text" data-success="right">Escriba el email de quien le refirió y le daremos extra crédito, o deje este campo en blanco.</span>
-		</div>
- -->
-		<% for(var i=0; i<survey.questions.length; i++){
-			var question = survey.questions[i]; %>
-			<div class="row">
-				<div class="col s12">
-					<h2><small><%= i + 1 %>.</small> <%= question.title %></h2>
-					<div id="<%= question.id %>" class="question">
-						<table>
-						<% for(var j=0; j<question.answers.length; j++){
-							var answer = question.answers[j];
-							var checked = answer.choosen ? 'checked' : '' %>
-							<tr>
-								<td align="center" width="7%" valign="middle">
-									<label>
-										<input class="with-gap" name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
-										<span><%= answer.title %></span>
-									</label>
-								</td>
-							</tr>
-						<% } %>
-						</table>
-					</div>
-				</div>
-			</div>
-		<% } %>
+	</div>
+
+	<div class="bottom-space"></div>
+
+	<div id="btn-accept" class="fixed-action-btn">
+		<a class="btn-floating btn-large waves-effect waves-light green" href="#!" onclick="acceptSurvey()"><i class="material-icons">thumb_up</i></a>
 	</div>
 </div>
 
-<div class="bottom-space"></div>
+<!-- LIST OF QUESTIONS -->
+<div id="questions-section" class="hidden">
+	<div class="row">
+		<div class="col s12">
+			<div class="row">
+				<div class="col s12">
+					<h1><%= survey.title %></h1>
+					<% if(survey.details){ %>
+						<p><%= survey.details %></p>
+					<% } %>
+				</div>
+			</div>
 
-<!-- SAVE BUTTON -->
-<div id="btn" class="fixed-action-btn">
-	<a class="btn-floating btn-large waves-effect waves-light green" href="#!" onclick="submitSurvey()"><i class="material-icons">send</i></a>
+			<% for(var i=0; i<survey.questions.length; i++){
+				var question = survey.questions[i]; %>
+				<div class="row">
+					<div class="col s12">
+						<h2><small><%= i + 1 %>.</small> <%= question.title %></h2>
+						<div id="<%= question.id %>" class="question">
+							<table>
+							<% for(var j=0; j<question.answers.length; j++){
+								var answer = question.answers[j];
+								var checked = answer.choosen ? 'checked' : '' %>
+								<tr>
+									<td align="center" width="7%" valign="middle">
+										<label>
+											<input class="with-gap" name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
+											<span><%= answer.title %></span>
+										</label>
+									</td>
+								</tr>
+							<% } %>
+							</table>
+						</div>
+					</div>
+				</div>
+			<% } %>
+		</div>
+	</div>
+
+	<div class="bottom-space"></div>
+
+	<div class="fixed-action-btn">
+		<a class="btn-floating btn-large waves-effect waves-light green" href="#!" onclick="submitSurvey()"><i class="material-icons">send</i></a>
+	</div>
 </div>
 
 <!-- COMPLETION MESSAGE -->
-<div id="msg" class="row hidden">
+<div id="message-section" class="row hidden">
 	<div class="col s12 center">
-		<h1>¡Chócala! Ya respondió esta encuesta</h1>
-		<i class="material-icons large">pan_tool</i>
-		<p>Usted ya respondió esta encuesta, y como agradecimiento le agregamos §<%= survey.value %> a su crédito.
-			Muchas gracias por su participación.</p>
-		<a class="btn waves-effect waves-light" href="#!" onclick="apretaste.send({command:'ENCUESTA'})">Otras
-			encuestas</a>
+		<h1>¡Genial! Ya respondió esta encuesta</h1>
+		<i class="material-icons large">thumb_up</i>
+		<p>Usted ya respondió esta encuesta y como agradecimiento le agregamos §<%= survey.value %> a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.</p>
+		<a class="btn waves-effect waves-light" href="#!" onclick="apretaste.send({command:'ENCUESTA'})">Otras encuestas</a>
 	</div>
 </div>
