@@ -141,7 +141,7 @@ class Service
 
 		//get the list of surveys answered
 		$completed = Database::query("
-			SELECT person_id, responses, total, C.title, C.value, A.inserted
+			SELECT person_id, responses, total, C.title, C.value, A.completed
 			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS completed FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
