@@ -127,9 +127,9 @@ class Service
 	/**
 	 * Display a list of previous surveys
 	 *
-	 * @author salvipascual
 	 * @param Request $request
 	 * @param Response $response
+	 * @author salvipascual
 	 */
 	public function _terminadas(Request $request, Response $response)
 	{
@@ -142,7 +142,7 @@ class Service
 		//get the list of surveys answered
 		$completed = Database::query("
 			SELECT person_id, responses, total, C.title, C.value, A.inserted
-			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS inserted FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
+			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS completed FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
 			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
 			ON A.survey = B.survey
 			LEFT JOIN (SELECT * FROM _survey) C
@@ -167,9 +167,9 @@ class Service
 	/**
 	 * Display a survey to answer it
 	 *
-	 * @author salvipascual
 	 * @param Request $request
 	 * @param Response $response
+	 * @author salvipascual
 	 */
 	public function _ver(Request $request, Response $response)
 	{
@@ -262,9 +262,9 @@ class Service
 	/**
 	 * Responds a survey
 	 *
-	 * @author salvipascual
 	 * @return void
 	 * @throws \Exception
+	 * @author salvipascual
 	 */
 	public function _responder(Request $request, Response &$response)
 	{
@@ -347,28 +347,23 @@ class Service
 				if ($seed === 1) {
 					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 3 tickets para la rifa';
-				}
-				// 1 ticket para la rifa
+				} // 1 ticket para la rifa
 				elseif ($seed === 2) {
 					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 1 ticket para la rifa';
-				}
-				// 3 flores
+				} // 3 flores
 				elseif ($seed === 3) {
 					Database::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 3 flores para Piropazo';
-				}
-				// 1 flor
+				} // 1 flor
 				elseif ($seed === 4) {
 					Database::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 1 flor para Piropazo';
-				}
-				// 3 corazones
+				} // 3 corazones
 				elseif ($seed === 5) {
 					Database::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo';
-				}
-				// 1 de crédito
+				} // 1 de crédito
 				else {
 					$survey->value++;
 					$msg .= 'Los poderes del amuleto del Druida te regalan §1 de crédito';
@@ -427,7 +422,7 @@ class Service
 	 */
 	private function isProfileIncomplete(Person $person)
 	{
-		return $person->age < 5 
+		return $person->age < 5
 			|| $person->age > 130
 			|| empty($person->province)
 			|| empty($person->gender)
