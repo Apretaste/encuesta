@@ -8,7 +8,6 @@ use Apretaste\Request;
 use Apretaste\Response;
 use Apretaste\Challenges;
 use Apretaste\Notifications;
-use Framework\Core;
 use Framework\Database;
 
 class Service
@@ -320,6 +319,10 @@ class Service
 			START TRANSACTION;
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
+			DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
+			INSERT INTO _survey_done (survey_id, person_id, country, province, city) 
+			    SELECT {$survey->id}, id, country, province, city FROM person
+			    WHERE id = {$request->person->id}; 
 			COMMIT;");
 
 		// add § for the user if all questions were completed
