@@ -313,6 +313,7 @@ class Service
 			$values[] = "('{$request->person->id}', '{$request->person->email}', {$survey->id}, $questionID, $answerID)";
 		}
 		$values = implode(',', $values);
+		$startTime = $request->input->data->startTime ?? date("Y-m-d h:i:s");
 
 		// replace all old answers by the new answers in one query
 		Database::query("
@@ -320,8 +321,8 @@ class Service
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
 			DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
-			INSERT INTO _survey_done (survey_id, person_id, country, province, city) 
-			    SELECT {$survey->id}, id, country, province, city FROM person
+			INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time) 
+			    SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time FROM person
 			    WHERE id = {$request->person->id}; 
 			COMMIT;");
 

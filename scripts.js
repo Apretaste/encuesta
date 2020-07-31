@@ -5,6 +5,7 @@ var province = {'PINAR_DEL_RIO':'Pinar del Río','LA_HABANA':'La Habana','ARTEMI
 var marital = {'SOLTERO':'Soltero', 'SALIENDO':'Saliendo', 'COMPROMETIDO':'Comprometido', 'CASADO':'Casado', 'DIVORCIADO':'Divorciado', 'VIUDO':'Viudo'};
 var race = {'NEGRO':'Negro', 'BLANCO':'Blanco', 'MESTIZO':'Mestizo', 'OTRO':'Otro'};
 var occupation = {'AMA_DE_CASA' :'Ama de casa', 'ESTUDIANTE':'Estudiante', 'EMPLEADO_PRIVADO':'Empleado Privado', 'EMPLEADO_ESTATAL':'Empleado Estatal', 'INDEPENDIENTE':'Trabajador Independiente', 'JUBILADO':'Jubilado', 'DESEMPLEADO':'Desempleado'};
+var startTime = moment().format('Y-MM-DD h:m:s');
 
 // run when the service loads
 $(document).ready(function () {
@@ -79,6 +80,7 @@ function acceptSurvey() {
 	// show the survey
 	$('#consent-section').hide();
 	$('#questions-section').show();
+	startTime = moment().format('Y-MM-DD h:m:s');
 }
 
 // submit a survey once completed
@@ -111,7 +113,7 @@ function submitSurvey() {
 	if (answers.length) {
 		apretaste.send({
 			command: "ENCUESTA RESPONDER",
-			data: {answers: answers},
+			data: {answers: answers, startTime: startTime},
 			redirect: false
 		});
 
