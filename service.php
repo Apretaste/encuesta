@@ -9,16 +9,15 @@ use Apretaste\Response;
 use Apretaste\Challenges;
 use Apretaste\Notifications;
 use Framework\Database;
+use Framework\GoogleAnalytics;
 
 class Service
 {
 	/**
 	 * Main service
 	 *
-	 * @paramRequest$request
-	 * @paramResponse$response
-	 *
-	 * @throws \Exception
+	 * @param Request $request
+	 * @param Response $response
 	 * @author salvipascual
 	 */
 	public function _main(Request $request, Response &$response)
@@ -52,10 +51,8 @@ class Service
 	/**
 	 * Get the list of surveys opened
 	 *
-	 * @paramRequest$request
-	 * @paramResponse$response
-	 *
-	 * @throws \Framework\Alert
+	 * @param Request $request
+	 * @param Response $response
 	 * @author salvipascual
 	 */
 	public function _lista(Request $request, Response $response)
@@ -281,8 +278,8 @@ class Service
 	/**
 	 * Responds a survey
 	 *
-	 * @return void
-	 * @throws \Exception
+	 * @param Request $request
+	 * @param Response $response
 	 * @author salvipascual
 	 */
 	public function _responder(Request $request, Response &$response)
@@ -395,20 +392,17 @@ class Service
 			}
 
 			// transfer the funds
-			Money::send(
-				Money::BANK,
-				$request->person->id,
-				$survey->value,
-				'Encuesta completada'
-			);
+			Money::send(Money::BANK, $request->person->id, $survey->value, 'Encuesta completada');
 
 			// add a new response to the counter
 			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
 
 			// notify the user
 			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
-
 			Notifications::alert($request->person->id, $msg, 'attach_money', '{"command":"ENCUESTA TERMINADAS"}');
+
+			// submit to Google Analytics 
+			GoogleAnalytics::event('survey_complete', $survey->id);
 
 			// complete the challenge
 			Challenges::complete('fill-survey', $request->person->id);
@@ -423,9 +417,7 @@ class Service
 	 *
 	 * @param String $surveyID
 	 * @param String $personID
-	 *
 	 * @return Boolean, true if survey is 100% completed
-	 * @throws \Framework\Alert
 	 * @author salvipascual
 	 */
 	private function isSurveyComplete($surveyID, $personID)
