@@ -72,7 +72,8 @@ class Service
 				_survey.id AS survey,
 				_survey.title AS survey_title,
 				_survey.deadline as survey_deadline,
-				_survey.value as survey_value
+				_survey.value as survey_value,
+				_survey.filter as survey_filter
 			FROM _survey
 			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE';
 
@@ -104,9 +105,11 @@ class Service
 				survey,
 				survey_title AS title,
 				survey_deadline AS deadline,
-				survey_value AS value
+				survey_value AS value,
+			    survey_filter as filter
 			FROM ($sql_survey_datails) AS subq
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);");
+
 
 		// message if there are not opened surveys
 		if (empty($surveys)) {
@@ -119,8 +122,25 @@ class Service
 			return;
 		}
 
+		// filter surveys
+		$sql = [];
+		foreach ($surveys as $key => $survey) {
+			if (empty(trim($survey->filter)))
+				$sql[] = "SELECT $key AS idx;";
+			else
+				$sql[] = "SELECT $key As idx WHERE EXISTS (SELECT id FROM person WHERE id = {$request->person->id} AND ({$survey->filter}))";
+		}
+
+		$sql = implode(' UNION ', $sql);
+		$idxs = Database::query($sql);
+		$filtered = [];
+		if (is_array($idxs)) {
+			foreach ($idxs as $idx)
+				$filtered[] = $surveys[$idx->idx];
+		} else $filtered = $surveys;
+
 		// send response to the user
-		$response->setTemplate('list.ejs', ['surveys' => $surveys]);
+		$response->setTemplate('list.ejs', ['surveys' => $filtered]);
 	}
 
 	/**
