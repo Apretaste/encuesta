@@ -125,7 +125,8 @@ class Service
 			if (empty(trim($survey->filter)))
 				$sql[] = "SELECT $key AS idx;";
 			else
-				$sql[] = "SELECT $key As idx WHERE EXISTS (SELECT id FROM person WHERE id = {$request->person->id} AND ({$survey->filter}))";
+				$sql[] = "SELECT ta{$key}.idx FROM (SELECT $key As idx) ta{$key} 
+    						INNER JOIN (SELECT id FROM person WHERE id = {$request->person->id} AND ({$survey->filter})) tb{$key}";
 		}
 
 		$sql = implode(' UNION ', $sql);
