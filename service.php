@@ -108,16 +108,6 @@ class Service
 			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);");
 
 
-		// message if there are not opened surveys
-		if (empty($surveys)) {
-			$response->setTemplate('message.ejs', [
-				'header' => 'No hay encuestas',
-				'icon' => 'sentiment_very_dissatisfied',
-				'text' => 'Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.',
-				'button' => ['href' => 'ENCUESTA TERMINADAS', 'caption' => 'Ver Terminadas'],
-			]);
-			return;
-		}
 
 		// filter surveys
 		$sql = [];
@@ -130,12 +120,26 @@ class Service
 		}
 
 		$sql = implode(' UNION ', $sql);
-		$idxs = Database::query($sql);
-		$filtered = [];
-		if (is_array($idxs)) {
-			foreach ($idxs as $idx)
-				$filtered[] = $surveys[$idx->idx];
-		} else $filtered = $surveys;
+		if(!empty(trim($sql))) {
+			$idxs = Database::query($sql);
+			$filtered = [];
+			if (is_array($idxs)) {
+				foreach ($idxs as $idx)
+					$filtered[] = $surveys[$idx->idx];
+				$surveys = $filtered;
+			}
+		}
+				
+		// message if there are not opened surveys
+		if (empty($surveys)) {
+			$response->setTemplate('message.ejs', [
+				'header' => 'No hay encuestas',
+				'icon' => 'sentiment_very_dissatisfied',
+				'text' => 'Lo siento pero no tenemos ninguna encuesta para usted en este momento. Estamos trabajamos en agregar encuestas a nuestra lista, por favor vuelva a revisar en unos días. Muchas gracias por estar pendiente.',
+				'button' => ['href' => 'ENCUESTA TERMINADAS', 'caption' => 'Ver Terminadas'],
+			]);
+			return;
+		}
 
 		// send response to the user
 		$response->setTemplate('list.ejs', ['surveys' => $filtered]);
