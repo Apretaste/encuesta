@@ -347,16 +347,17 @@ class Service
 				year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
 				sexual_orientation, religion) 
 			    SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time,
-			     '{$request->person->yearOfBirth}',
-			     '{$request->person->gender}',
-			     '{$request->person->eyes}',
-			     '{$request->person->skin}',
-			     '{$request->person->body},
-				 '{$request->person->hair}',
-				 '{$request->person->education}',
-				 '{$request->person->maritalStatus}'
-				 '{$request->person->sexualOrientation}',
-				 '{$request->person->religion}'
+			     '{$request->person->yearOfBirth}' as year_of_birth,
+			     '{$request->person->gender}' as gender,
+			     '{$request->person->eyes}' as eyes,
+			     '{$request->person->skin}' as skin,
+			     '{$request->person->body} as body_type,
+				 '{$request->person->hair}' as hair,
+				 '{$request->person->education}' as highest_school_level,
+				 '{$request->person->occupation}' as occupation,
+				 '{$request->person->maritalStatus}' as marital_status,
+				 '{$request->person->sexualOrientation}' as sexual_orientation,
+				 '{$request->person->religion}' as religion
 			     FROM person
 			    WHERE id = {$request->person->id}; 
 			COMMIT;");
