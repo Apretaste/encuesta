@@ -129,7 +129,7 @@ class Service
 				$surveys = $filtered;
 			}
 		}
-				
+
 		// message if there are not opened surveys
 		if (empty($surveys)) {
 			$response->setTemplate('message.ejs', [
@@ -343,8 +343,22 @@ class Service
 			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
 			DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
-			INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time) 
-			    SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time FROM person
+			INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time,
+				year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
+				sexual_orientation, religion) 
+			    SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time,
+			     '{$request->person->yearOfBirth}',
+			     '{$request->person->gender}',
+			     '{$request->person->eyes}',
+			     '{$request->person->skin}',
+			     '{$request->person->body},
+				 '{$request->person->hair}',
+				 '{$request->person->education}',
+				 '{$request->person->maritalStatus}'
+				 '{$request->person->sexualOrientation}',
+				 '{$request->person->religion}'
+				 }',
+			     FROM person
 			    WHERE id = {$request->person->id}; 
 			COMMIT;");
 
