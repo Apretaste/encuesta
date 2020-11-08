@@ -357,7 +357,6 @@ class Service
 				 '{$request->person->maritalStatus}'
 				 '{$request->person->sexualOrientation}',
 				 '{$request->person->religion}'
-				 }',
 			     FROM person
 			    WHERE id = {$request->person->id}; 
 			COMMIT;");
