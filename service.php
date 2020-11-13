@@ -63,72 +63,38 @@ class Service
 			return;
 		}
 
-		// subqueries for the opened surveys
-		$sql_survey_datails = '
-			SELECT
-				_survey.id AS survey,
-				_survey.title AS survey_title,
-				_survey.deadline as survey_deadline,
-				_survey.value as survey_value,
-				_survey.filter as survey_filter
-			FROM _survey
-			WHERE _survey.active = 1 AND _survey.deadline >= CURRENT_DATE';
-
-		$sql_survey_total_questions = '
-			SELECT COUNT(_survey_question.id) AS total
-			FROM _survey_question
-			WHERE _survey_question.survey =  subq.survey
-			GROUP BY _survey_question.survey';
-
-		$sql_survey_total_choosen = "
-			SELECT total FROM (
-				SELECT COUNT(_survey_answer_choosen.answer) AS total, (
-					SELECT _survey_question.survey
-					FROM _survey_question
-					WHERE _survey_question.id = (
-						SELECT _survey_answer.question
-						FROM _survey_answer
-						WHERE _survey_answer.id = _survey_answer_choosen.answer)
-					) AS survey_id
-				FROM _survey_answer_choosen
-				WHERE _survey_answer_choosen.person_id = '{$request->person->id}'
-				GROUP BY survey_id
-			) AS subq2
-			WHERE survey_id = subq.survey";
+		$sqlSurveys = "SELECT
+				_survey.id as survey, _survey.* 
+				FROM _survey
+				WHERE active = 1 AND deadline >= CURRENT_DATE
+				AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND _survey.id = C.survey_id);";
 
 		// get list of opened surveys
-		$surveys = Database::query("
-			SELECT
-				survey,
-				survey_title AS title,
-				survey_deadline AS deadline,
-				survey_value AS value,
-			    survey_filter as filter
-			FROM ($sql_survey_datails) AS subq
-			WHERE coalesce(($sql_survey_total_questions),0) > coalesce(($sql_survey_total_choosen),0);");
-
-
+		$surveys = Database::query($sqlSurveys);
 
 		// filter surveys
 		$sql = [];
 		foreach ($surveys as $key => $survey) {
 			if (empty(trim($survey->filter)))
-				$sql[] = "SELECT $key AS idx;";
+				$sql[] = "SELECT $key AS idx";
 			else
 				$sql[] = "SELECT ta{$key}.idx FROM (SELECT $key As idx) ta{$key} 
     						INNER JOIN (SELECT id FROM person WHERE id = {$request->person->id} AND ({$survey->filter})) tb{$key}";
 		}
 
 		$sql = implode(' UNION ', $sql);
+
+		$filtered = $surveys;
 		if(!empty(trim($sql))) {
 			$idxs = Database::query($sql);
 			$filtered = [];
 			if (is_array($idxs)) {
 				foreach ($idxs as $idx)
 					$filtered[] = $surveys[$idx->idx];
-				$surveys = $filtered;
 			}
 		}
+
+		$surveys = $filtered;
 
 		// message if there are not opened surveys
 		if (empty($surveys)) {
@@ -162,13 +128,10 @@ class Service
 
 		//get the list of surveys answered
 		$completed = Database::query("
-			SELECT person_id, responses, total, C.title, C.value, A.completed
-			FROM (SELECT person_id, survey, COUNT(survey) AS responses, MAX(date_choosen) AS completed FROM _survey_answer_choosen WHERE person_id='{$request->person->id}' GROUP BY survey) A
-			LEFT JOIN (SELECT survey, COUNT(survey) AS total FROM _survey_question GROUP BY survey) B
-			ON A.survey = B.survey
-			LEFT JOIN (SELECT * FROM _survey) C
-			ON A.survey = C.id
-			WHERE responses = total");
+			select _survey.id, _survey.title, _survey_done.inserted_date as completed,
+			_survey.value from _survey_done
+			inner join _survey on _survey.id = _survey_done.survey_id
+			where person_id = {$request->person->id} order by inserted_date desc");
 
 		// message if there are not opened surveys
 		if (empty($completed)) {
@@ -181,7 +144,6 @@ class Service
 		}
 
 		// send response to the user
-		$response->setCache('day');
 		$response->setTemplate('completed.ejs', ['surveys' => $completed]);
 	}
 
@@ -209,18 +171,13 @@ class Service
 				_survey.active AS survey_active,
 				_survey_question.id AS question,
 				_survey_question.title AS question_title,
+			    _survey_question.widget AS question_widget,
+			    _survey_question.min_answers AS question_min_answers,
 				_survey_answer.id AS answer,
-				_survey_answer.title AS answer_title,
-				(SELECT COUNT(person_id)
-					FROM _survey_answer_choosen
-					WHERE person_id = '{$request->person->id}'
-					AND answer = _survey_answer.id
-				) AS choosen
+				_survey_answer.title AS answer_title
 			FROM _survey
-			INNER JOIN _survey_answer
-			INNER JOIN _survey_question
-			ON _survey_question.survey = _survey.id
-			AND _survey_answer.question = _survey_question.id
+			INNER JOIN _survey_question	ON _survey_question.survey = _survey.id
+			LEFT JOIN _survey_answer ON _survey_answer.question = _survey_question.id
 			WHERE _survey.id = {$request->input->data->id}
 			ORDER BY _survey_question.id, _survey_answer.id");
 
@@ -257,7 +214,8 @@ class Service
 				$question->id = $r->question;
 				$question->title = $r->question_title;
 				$question->answers = [];
-				$question->completed = false;
+				$question->widget = $r->question_widget;
+				$question->min_answers = $r->question_min_answers;
 				$survey->questions[] = $question;
 			}
 
@@ -265,16 +223,12 @@ class Service
 			$answer = new stdClass();
 			$answer->id = $r->answer;
 			$answer->title = $r->answer_title;
-			$answer->choosen = $r->choosen == '1';
-
-			// mark question as completed
-			if ($answer->choosen) {
-				$question->completed = true;
-			}
 
 			// assign the answer to the question
 			$question->answers[] = $answer;
 		}
+
+		GoogleAnalytics::event('survey_open', $survey->id);
 
 		// send response to the view
 		$response->setTemplate('survey.ejs', ['survey' => $survey]);
@@ -289,22 +243,12 @@ class Service
 	 */
 	public function _responder(Request $request, Response &$response)
 	{
-		// do not continue if data is not passed
-		if (empty($request->input->data->answers)) {
-			return;
-		}
-
-		// get the question IDs for the answers received
-		$answers = implode(',', $request->input->data->answers);
-		$questions = Database::query("SELECT question FROM _survey_answer WHERE id IN ($answers)");
 
 		// get the survey
-		$survey = Database::query("
+		$survey = Database::queryFirst("
 			SELECT A.id, A.value, A.title
 			FROM _survey A
-			JOIN _survey_question B
-			ON A.id = B.survey
-			WHERE B.id = {$questions[0]->question}")[0];
+			WHERE A.id = {$request->input->data->survey}");
 
 		if (!isset($survey->id)) {
 			$response->setTemplate('message.ejs', [
@@ -314,6 +258,46 @@ class Service
 				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
 			return;
+		}
+
+		$request->input->data = get_object_vars($request->input->data);
+		$cacheQuestions = [];
+		//  (id, person_id, survey, question, answer, position, explanation)
+		$values = [];
+		foreach($request->input->data as $key => $value) {
+			if (stripos($key,'question_') === 0) {
+				$parts = explode('_', $key);
+
+				// get question
+				$questionId = $parts[1];
+				if (!isset($cacheQuestions[$questionId])) {
+					$cacheQuestions[$questionId] = Database::queryFirst("SELECT * FROM _survey_question WHERE id = $questionId");
+				}
+				$question = $cacheQuestions[$questionId];
+
+				if ($question) {
+					switch($question->widget) {
+						case 'MULTIPLE':
+						case 'RANDOM':
+							$answerId = $value;
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '')";
+						break;
+						case 'SEVERAL':
+							$answerId = $parts[2];
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '')";
+							break;
+						case 'RANKING':
+							$answerId = $parts[2];
+							$position = (int) $value;
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, $position, '')";
+							break;
+						case 'FREE':
+							$explanation = Database::escape($value);
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, 0, 1, '$explanation')";
+							break;
+					}
+				}
+			}
 		}
 
 		// do not let the user get double credits
@@ -327,30 +311,26 @@ class Service
 			return;
 		}
 
-		// prepare the data to be sent in one large query
-		$values = [];
-		for ($i = 0, $iMax = count($request->input->data->answers); $i < $iMax; $i++) {
-			$questionID = $questions[$i]->question;
-			$answerID = $request->input->data->answers[$i];
-			$values[] = "('{$request->person->id}', '{$request->person->email}', {$survey->id}, $questionID, $answerID)";
-		}
-		$values = implode(',', $values);
 		$startTime = $request->input->data->startTime ?? date("Y-m-d h:i:s");
+		$values = implode(',',  $values);
 
 		// replace all old answers by the new answers in one query
-		Database::query("
-			START TRANSACTION;
-			DELETE FROM _survey_answer_choosen WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
-			INSERT INTO _survey_answer_choosen (person_id, email, survey, question, answer) VALUES $values;
-			DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
-			INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time,
-				year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
-				sexual_orientation, religion) 
-			    SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time, year_of_birth, gender, eyes,
-			     skin, body_type, hair, highest_school_level, occupation, marital_status, sexual_orientation, religion
-			     FROM person
-			    WHERE id = {$request->person->id}; 
-			COMMIT;");
+
+		$sql = "
+		START TRANSACTION;
+		DELETE FROM _survey_response WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
+		INSERT INTO _survey_response  (id, person_id, survey, question, answer, position, explanation) VALUES $values;
+		DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
+		INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time,
+			year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
+			sexual_orientation, religion) 
+			SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time, year_of_birth, gender, eyes,
+			 skin, body_type, hair, highest_school_level, occupation, marital_status, sexual_orientation, religion
+			 FROM person
+			WHERE id = {$request->person->id}; 
+		COMMIT;";
+
+		Database::query($sql);
 
 		// add § for the user if all questions were completed
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
@@ -418,6 +398,13 @@ class Service
 
 			// add the experience
 			Level::setExperience('FINISH_SURVEY', $request->person->id);
+
+			return $response->setTemplate('message.ejs', [
+				'header' => '¡Genial! Ya respondió esta encuesta',
+				'icon' => 'thumb_up',
+				'text' => 'Usted ya respondió esta encuesta y como agradecimiento le agregamos §'.$survey->value.' a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.',
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas']
+			]);
 		}
 	}
 
@@ -434,7 +421,7 @@ class Service
 		$res = Database::query("
 			SELECT * FROM
 			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(answer) as answers FROM _survey_answer_choosen WHERE survey='$surveyID' AND person_id='$personID') B");
+			(SELECT COUNT(DISTINCT question) as answers FROM _survey_response WHERE survey='$surveyID' AND person_id='$personID') B");
 
 		return $res[0]->total * 1 === $res[0]->answers * 1;
 	}
@@ -455,5 +442,15 @@ class Service
 			|| empty($person->maritalStatus)
 			|| empty($person->occupation)
 			|| empty($person->education);
+	}
+
+	/**
+	 * Event when start survey
+	 *
+	 * @param Request $request
+	 * @param Response $response
+	 */
+	public function _start(Request $request, Response $response) {
+		GoogleAnalytics::event('survey_start', $request->input->data->id);
 	}
 }

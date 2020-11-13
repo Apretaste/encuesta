@@ -6,12 +6,179 @@ var marital = {'SOLTERO':'Soltero', 'SALIENDO':'Saliendo', 'COMPROMETIDO':'Compr
 var race = {'NEGRO':'Negro', 'BLANCO':'Blanco', 'MESTIZO':'Mestizo', 'OTRO':'Otro'};
 var occupation = {'AMA_DE_CASA' :'Ama de casa', 'ESTUDIANTE':'Estudiante', 'EMPLEADO_PRIVADO':'Empleado Privado', 'EMPLEADO_ESTATAL':'Empleado Estatal', 'INDEPENDIENTE':'Trabajador Independiente', 'JUBILADO':'Jubilado', 'DESEMPLEADO':'Desempleado'};
 var startTime = moment().format('Y-MM-DD h:m:s');
+var currentStep = 0;
+var totalSteps = 0;
 
+function updateProgressBar() {
+	var percent = 0;
+	if (totalSteps > 0) {
+		percent = currentStep / totalSteps * 100;
+	}
+	$("#progress-bar").css('width', percent + '%');
+}
+
+function reorder(){
+	$(".answer-item").each(function(index){
+		var order =  $(this).attr('data-order');
+		var answerId = $(this).attr('data-answer');
+
+		console.log("answer "+answerId+" order "+order);
+
+		$(this).css('order', order)
+		$("#answer_value_" + answerId).val(order);
+	});
+}
 // run when the service loads
-$(document).ready(function () {
+$(function () {
+	if (typeof survey != "undefined") 
+    	totalSteps = survey.questions.length;
+
 	$('select').formSelect();
 	$('.tabs').tabs();
+
+	// forms
+	$(".ap-form").submit(function(e) {
+		e.preventDefault();
+
+		var form = $(this);
+		var valid = true;
+		var data = getDataForm(form);
+
+		var validator = form.attr('data-validator');
+		if (validator)  {
+			eval('valid = ' + validator +'(data)');
+			if (!valid) return;
+		}
+
+		var redirect = form.attr('data-redirect');
+
+		if (typeof redirect === 'undefined') redirect = true;
+
+		apretaste.send({
+			command: form.attr('action'),
+			data: data,
+			redirect: redirect
+		});
+	});
+
+	$(".ap-form-step[data-step=0]").show();
+
+	$("#btn-next-step").click(function(){
+		// validate
+
+		var question = survey.questions[currentStep];
+
+		switch(question.widget) {
+			case 'MULTIPLE':
+				if ($('.answer_'+question.id+':checked').length == 0) {
+					toast('Responda antes de continuar');
+					return false;
+				}
+			case 'RANDOM':
+				if ($('.answer_'+question.id+':checked').length == 0) {
+					toast('Responda antes de continuar');
+					return false;
+				}
+				break;
+			case 'SEVERAL':
+				var minimum = question.min_answers;
+				if ($('.answer_'+question.id+':checked').length < minimum) {
+					toast('Responda antes de continuar seleccioando un minimo de ' + minimum + ' elemento(s)');
+					return false;
+				}
+				break;
+			case 'FREE':
+				break;
+
+			case 'RANKING':
+				break;
+		}
+
+		$(".ap-form-step").hide();
+
+		currentStep++;
+
+		if (currentStep === totalSteps - 1) {
+			$("#btn-next-step").hide();
+			$("#btn-submit").show();
+		}
+
+		$("#btn-prev-step").removeClass('hidden');
+
+		$(".ap-form-step[data-step="+currentStep+"]").show();
+		updateProgressBar();
+	});
+
+	$("#btn-prev-step").click(function(){
+		if (currentStep > 0) {
+			$(".ap-form-step").hide();
+
+			currentStep--;
+
+			if (currentStep === 0) {
+				$("#btn-prev-step").addClass('hidden');
+			}
+
+			$("#btn-submit").hide();
+			$("#btn-next-step").show();
+			$(".ap-form-step[data-step="+currentStep+"]").show();
+			updateProgressBar();
+		}
+	});
+
+	$(".btn-up").click(function(){
+		var thisItem = $(this).parent();
+		var thisOrder = parseInt(thisItem.attr('data-order'));
+
+		if (thisOrder === 1) return;
+
+		$(".answer-item[data-order=" + (thisOrder - 1) +"]").attr('data-order', thisOrder);
+		thisItem.attr('data-order', thisOrder - 1);
+
+		reorder();
+
+	});
+
+	$(".btn-down").click(function(){
+		var thisItem = $(this).parent();
+		var thisOrder = parseInt(thisItem.attr('data-order'));
+
+		var nextItem = $(".answer-item[data-order=" + (thisOrder + 1) +"]");
+		if (nextItem.length === 0) return;
+
+		nextItem.attr('data-order', thisOrder);
+		thisItem.attr('data-order', thisOrder + 1);
+
+		reorder();
+	});
 });
+
+function toast(message){
+	M.toast({html: message});
+}
+/**
+ *
+ * @param form
+ * @returns {{}}
+ */
+function getDataForm(form) {
+	var serial = form.serializeArray();
+	var data = {};
+
+	for (var field in serial) {
+		var fn = serial[field].name;
+
+		if (fn.indexOf('[]') > 0) {
+			fn = fn.replace('[]', '');
+			if (typeof data[fn] === 'undefined') data[fn] = [];
+			data[fn].push(serial[field].value);
+		} else {
+			data[serial[field].name] = serial[field].value;
+		}
+	}
+
+	return data;
+}
 
 // get list of years for the age dropdown
 function getYears() {
@@ -24,6 +191,10 @@ function getYears() {
 
 	return years;
 } 
+
+function checkSurvey(data) {
+	return true;
+}
 
 // submit the profile informacion
 function submitProfileData() {
@@ -81,6 +252,15 @@ function acceptSurvey() {
 	$('#consent-section').hide();
 	$('#questions-section').show();
 	startTime = moment().format('Y-MM-DD h:m:s');
+
+	// event when start
+	apretaste.send({
+		command: "ENCUESTA START",
+		data: {
+			id: survey.id
+		},
+		redirect: false
+	});
 }
 
 // submit a survey once completed
@@ -121,6 +301,8 @@ function submitSurvey() {
 		$('#questions-section').hide();
 		$('#message-section').show();
 	}
+
+
 }
 
 // Polyfill Functions

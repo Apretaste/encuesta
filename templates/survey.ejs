@@ -41,51 +41,103 @@
 </div>
 
 <!-- LIST OF QUESTIONS -->
-<div id="questions-section" class="hidden">
-	<div class="row">
-		<div class="col s12">
-			<div class="row">
-				<div class="col s12">
-					<h1><%= survey.title %></h1>
-					<% if(survey.details){ %>
-						<p><%= survey.details %></p>
-					<% } %>
-				</div>
-			</div>
+<form class="ap-form" action="ENCUESTA RESPONDER" data-validator="checkSurvey">
+	<input type="hidden" name="survey" id="survey" value="<%= survey.id %>">
+	<div id="questions-section" class="hidden">
+		<div class="row">
+			<div class="col s12">
+				<h1><%= survey.title %></h1>
 
-			<% for(var i=0; i<survey.questions.length; i++){
-				var question = survey.questions[i]; %>
-				<div class="row">
-					<div class="col s12">
-						<h2><small><%= i + 1 %>.</small> <%= question.title %></h2>
+				<div class="progress">
+					<div id="progress-bar" class="determinate" style="width: 0%;"></div>
+				</div>
+
+				<% if(survey.details){ %>
+					<p><%= survey.details %></p>
+				<% } %>
+			</div>
+			<div class="col s12">
+				<% for(var i=0; i<survey.questions.length; i++){
+					var question = survey.questions[i]; %>
+
+					<div class="ap-form-step" data-step="<%= i %>">
+						<h3><%= question.title %></h3>
 						<div id="<%= question.id %>" class="question">
-							<table>
-							<% for(var j=0; j<question.answers.length; j++){
-								var answer = question.answers[j];
-								var checked = answer.choosen ? 'checked' : '' %>
-								<tr>
-									<td align="center" width="7%" valign="middle">
-										<label>
-											<input class="with-gap" name="<%= question.id %>" value="<%= answer.id %>" <%= checked %> type="radio"/>
-											<span><%= answer.title %></span>
-										</label>
-									</td>
-								</tr>
+							<% if (question.widget == 'MULTIPLE' || question.widget == 'RANDOM') { %>
+								<% if ( question.widget == 'RANDOM') question.answers.sort(function() { return Math.random() - 0.5 }) %>
+								<table>
+									<% for(var j=0; j < question.answers.length; j++){
+										var answer = question.answers[j]; %>
+										<tr>
+											<td align="center" width="7%" valign="middle">
+												<label>
+													<input class="answer_<%= question.id %> with-gap group-required" name="question_<%= question.id %>" value="<%= answer.id %>" type="radio"/>
+													<span><%= answer.title %></span>
+												</label>
+											</td>
+										</tr>
+									<% } %>
+								</table>
 							<% } %>
-							</table>
+
+							<% if (question.widget == 'SEVERAL') { %>
+								<table>
+									<% for(var j=0; j<question.answers.length; j++){
+										var answer = question.answers[j]; %>
+									<tr>
+										<td align="center" width="7%" valign="middle">
+											<label>
+												<input class="answer_<%= question.id %> with-gap group-required" name="question_<%= question.id %>_<%= answer.id %>[]" type="checkbox"/>
+												<span><%= answer.title %></span>
+											</label>
+										</td>
+									</tr>
+									<% } %>
+								</table>
+							<% } %>
+
+							<% if (question.widget == 'RANKING') { %>
+								<div class="flexible">
+									<% for(var j=0; j<question.answers.length; j++){
+										var answer = question.answers[j]; %>
+										<div id="answer_<%= answer.id %>" data-question="<%= question.id %>" data-answer="<%= answer.id %>" class="flexible-item answer-item" data-order="<%= j+1 %>" style="order: <%= j+1 %>;">
+												<span><%= answer.title %></span>
+												<input required class="answer_<%= question.id %> answer-order with-gap field-number"
+													   name="question_<%= question.id %>_<%= answer.id %>" value="<%= j+1 %>"
+													   data-question="<%= question.id %>" data-answer="<%= answer.id %>" id="answer_value_<%= answer.id %>" type="hidden"/>
+											<a class="btn btn-up" data-answer="<%= answer.id %>"><i class="fa fa-arrow-up"></i></a>
+											<a class="btn btn-down" data-answer="<%= answer.id %>"><i class="fa fa-arrow-down"></i></a>
+										</div>
+									<% } %>
+								</div>
+							<% } %>
+
+							<% if (question.widget == 'FREE') { %>
+								<textarea required class="answer_<%= question.id %> materialize-textarea" name="question_<%= question.id %>"  id="question_<%= question.id %>"></textarea>
+							<% } %>
 						</div>
 					</div>
-				</div>
+				<% } %>
+			</div>
+		</div>
+
+		<!-- submit -->
+		<div class="bottom-space"></div>
+
+		<div class="fixed-action-btn">
+			<% if (survey.questions.length > 1) { %>
+				<a id="btn-prev-step" class="btn-floating waves-effect waves-light grey second hidden">
+					<i class="material-icons">arrow_back</i>
+				</a>
+				<a id="btn-next-step" class="btn-floating btn-large waves-effect waves-light green">
+					<i class="material-icons">arrow_forward</i>
+				</a>
 			<% } %>
+
+			<button id="btn-submit" class="btn-floating btn-large waves-effect waves-light green <% if (survey.questions.length > 1) { %>hidden<% } %>" type="submit"><i class="material-icons">send</i></button>
 		</div>
 	</div>
-
-	<div class="bottom-space"></div>
-
-	<div class="fixed-action-btn">
-		<a class="btn-floating btn-large waves-effect waves-light green" href="#!" onclick="submitSurvey()"><i class="material-icons">send</i></a>
-	</div>
-</div>
+</form>
 
 <!-- COMPLETION MESSAGE -->
 <div id="message-section" class="row hidden">
