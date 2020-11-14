@@ -1,97 +1,38 @@
-<div class="row">
-	<div class="input-field col s12">
-		<h1>Datos estadísticos</h1>
-		<p>Necesitamos algunos datos básicos suyos para obtener estadísticas y analizar los resultados. Las encuestas son anónimas, totalmente confidenciales, seguras, y su información nunca se compartirá con terceros.</p>
+<form class="ap-form" action="PERFIL UPDATE" data-redirect="false" data-callback="callbackProfileData">
+	<div class="row">
+		<div class="input-field col s12">
+			<h1>Datos estadísticos</h1>
+			<p>Necesitamos algunos datos básicos suyos para obtener estadísticas y analizar los resultados. Las encuestas son anónimas, totalmente confidenciales, seguras, y su información nunca se compartirá con terceros.</p>
+		</div>
+
+		<% var fields = {
+			gender: { label: "¿Cu&aacute;l es tu g&eacute;nero?", selectedValue: gender_selected, collection: gender, valueIsKey: true },
+			year_of_birth: { label: "¿En qué año naciste?", selectedValue: year_selected, collection: getYears(), valueIsKey: false },
+			skin: { label: "¿Cuál es tu color de piel?", selectedValue: race_selected, collection: race, valueIsKey: true },
+			highest_school_level: { label: "¿Cuál es su nivel escolar?", selectedValue: education_selected, collection: education, valueIsKey: true },
+			province: { label: "¿En qué provincia vives?", selectedValue: province_selected, collection: province, valueIsKey: true },
+			marital_status: { label: "¿Cuál es tu estado civil?", selectedValue: marital_selected, collection: marital, valueIsKey: true },
+			occupation: { label: "¿A qué te dedicas?", selectedValue: occupation_selected, collection: occupation, valueIsKey: true }
+		}; %>
+
+		<% for (var field in fields) { %>
+			<div class="input-field occupation-div col s12 m6">
+				<select id="<%= field %>" name="<%= field %>" class="validate" required>
+					<option value=""></option>
+					<% for(var key in fields[field].collection) { %>
+						<% var selected = key==fields[field].selectedValue ? 'selected' : '' %>
+						<option <%= selected %> value="<%= (fields[field].valueIsKey ? key :  fields[field].collection[key]) %>"><%= fields[field].collection[key] %></option>
+					<% } %>
+				</select>
+				<label for="<%= field %>"><%- fields[field].label %></label>
+			</div>
+		<% } %>
 	</div>
 
-	<!-- GENDER -->
-	<div class="input-field col s12 m6">
-		<select id="gender" class="validate">
-			<option value=""></option>
-			<% Object.keys(gender).forEach(function(key){ %>
-				<% var selected = key==gender_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= gender[key] %></option>
-			<% }) %>
-		</select>
-		<label for="gender">¿Qué eres?</label>
+	<div class="bottom-space"></div>
+
+	<!-- SAVE BUTTON -->
+	<div class="fixed-action-btn">
+		<button type="submit" class="btn-floating btn-large waves-effect waves-light green" href="#!"><i class="material-icons">save</i></button>
 	</div>
-
-	<!-- BIRTH YEAR -->
-	<div class="input-field col s12 m6">
-		<select id="year_of_birth" class="validate">
-			<option value=""></option>
-			<% getYears().forEach(function(year) { %>
-				<% var selected = year_selected==year ? 'selected' : '' %>
-				<option <%= selected %> value="<%= year %>"><%= year %></option>
-			<% }); %>
-		</select>
-		<label for="year_of_birth">¿En qué año naciste?</label>
-	</div>
-
-	<!-- SKIN -->
-	<div class="input-field col s12 m6">
-		<select id="skin" class="validate">
-			<option value=""></option>
-			<% Object.keys(race).forEach(function(key){ %>
-				<% var selected = key==race_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= race[key] %></option>
-			<% }); %>
-		</select>
-		<label for="skin">¿Cuál es tu color de piel?</label>
-	</div>
-
-	<!-- HIGHEST SCHOOL LEVEL -->
-	<div class="input-field col s12 m6">
-		<select id="highest_school_level" class="validate">
-			<option value=""></option>
-			<% Object.keys(education).forEach(function(key){ %>
-				<% var selected = key==education_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= education[key] %></option>
-			<% }) %>
-		</select>
-		<label for="highest_school_level">¿Cuál es su nivel escolar?</label>
-	</div>
-
-	<!-- PROVINCE -->
-	<div class="input-field province-div col s12 m6">
-		<select id="province" class="validate">
-			<option value=""></option>
-			<% Object.keys(province).forEach(function(key){ %>
-				<% var selected = key==province_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= province[key] %></option>
-			<% }) %>
-		</select>
-		<label for="province">¿En qué provincia vives?</label>
-	</div>
-
-	<!-- MARITAL STATUS -->
-	<div class="input-field marital-div col s12 m6">
-		<select id="marital_status" class="validate">
-			<option value=""></option>
-			<% Object.keys(marital).forEach(function(key){ %>
-				<% var selected = key==marital_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= marital[key] %></option>
-			<% }) %>
-		</select>
-		<label for="marital_status">¿Cuál es tu estado civil?</label>
-	</div>
-
-	<!-- OCCUPATION -->
-	<div class="input-field occupation-div col s12 m6">
-		<select id="occupation" class="validate">
-			<option value=""></option>
-			<% Object.keys(occupation).forEach(function(key){ %>
-				<% var selected = key==occupation_selected ? 'selected' : '' %>
-				<option <%= selected %> value="<%= key %>"><%= occupation[key] %></option>
-			<% }) %>
-		</select>
-		<label for="occupation">¿A qué te dedicas?</label>
-	</div>
-</div>
-
-<div class="bottom-space"></div>
-
-<!-- SAVE BUTTON -->
-<div class="fixed-action-btn">
-	<a class="btn-floating btn-large waves-effect waves-light green" href="#!" onclick="submitProfileData()"><i class="material-icons">save</i></a>
-</div>
+</form>

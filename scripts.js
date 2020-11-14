@@ -25,9 +25,50 @@ function reorder(){
 		console.log("answer "+answerId+" order "+order);
 
 		$(this).css('order', order)
-		$("#answer_value_" + answerId).val(order);
+		var input = $("#answer_value_" + answerId);
+		input.val(order);
+		input.attr('value', order);
 	});
 }
+
+function validateStep(stepNumber) {
+
+	var question = survey.questions[stepNumber];
+
+	switch(question.widget) {
+		case 'MULTIPLE':
+			if ($('.answer_'+question.id+':checked').length == 0) {
+				toast('Responda antes de continuar');
+				return false;
+			}
+			break;
+		case 'RANDOM':
+			if ($('.answer_'+question.id+':checked').length == 0) {
+				toast('Responda antes de continuar');
+				return false;
+			}
+			break;
+		case 'SEVERAL':
+			var minimum = question.min_answers;
+			if ($('.answer_'+question.id+':checked').length < minimum) {
+				toast('Responda antes de continuar seleccioando un minimo de ' + minimum + ' elemento(s)');
+				return false;
+			}
+			break;
+		case 'FREE':
+			break;
+
+		case 'RANKING':
+			if ($('.answer_'+question.id+'[value="0"]').length > 0) {
+				toast('Debe dar un orden a todas las respuestas. Mueva las que estan en 0.');
+				return false;
+			}
+			break;
+	}
+
+	return true;
+}
+
 // run when the service loads
 $(function () {
 	if (typeof survey != "undefined") 
@@ -51,13 +92,17 @@ $(function () {
 		}
 
 		var redirect = form.attr('data-redirect');
+		if (typeof redirect === 'undefined') { redirect = true; }
+		else redirect = redirect !== 'false';
 
-		if (typeof redirect === 'undefined') redirect = true;
+		var callback = form.attr('data-callback');
+		if (typeof callback === 'undefined') callback = null;
 
 		apretaste.send({
 			command: form.attr('action'),
 			data: data,
-			redirect: redirect
+			redirect: redirect,
+			callback: {name: callback}
 		});
 	});
 
@@ -65,34 +110,7 @@ $(function () {
 
 	$("#btn-next-step").click(function(){
 		// validate
-
-		var question = survey.questions[currentStep];
-
-		switch(question.widget) {
-			case 'MULTIPLE':
-				if ($('.answer_'+question.id+':checked').length == 0) {
-					toast('Responda antes de continuar');
-					return false;
-				}
-			case 'RANDOM':
-				if ($('.answer_'+question.id+':checked').length == 0) {
-					toast('Responda antes de continuar');
-					return false;
-				}
-				break;
-			case 'SEVERAL':
-				var minimum = question.min_answers;
-				if ($('.answer_'+question.id+':checked').length < minimum) {
-					toast('Responda antes de continuar seleccioando un minimo de ' + minimum + ' elemento(s)');
-					return false;
-				}
-				break;
-			case 'FREE':
-				break;
-
-			case 'RANKING':
-				break;
-		}
+		if (!validateStep(currentStep)) return;
 
 		$(".ap-form-step").hide();
 
@@ -130,6 +148,16 @@ $(function () {
 		var thisItem = $(this).parent();
 		var thisOrder = parseInt(thisItem.attr('data-order'));
 
+		if (thisOrder === 0) {
+			var questionItem = $("#question_flexible_" + thisItem.attr('data-question'));
+			var selected = parseInt(questionItem.attr('data-selected'));
+			selected++;
+			thisItem.attr('data-order', selected);
+			questionItem.attr('data-selected', selected);
+			reorder();
+			return;
+		}
+
 		if (thisOrder === 1) return;
 
 		$(".answer-item[data-order=" + (thisOrder - 1) +"]").attr('data-order', thisOrder);
@@ -142,6 +170,16 @@ $(function () {
 	$(".btn-down").click(function(){
 		var thisItem = $(this).parent();
 		var thisOrder = parseInt(thisItem.attr('data-order'));
+
+		if (thisOrder === 0) {
+			var questionItem = $("#question_flexible_" + thisItem.attr('data-question'));
+			var selected = parseInt(questionItem.attr('data-selected'));
+			selected++;
+			thisItem.attr('data-order', selected);
+			questionItem.attr('data-selected', selected);
+			reorder();
+			return;
+		}
 
 		var nextItem = $(".answer-item[data-order=" + (thisOrder + 1) +"]");
 		if (nextItem.length === 0) return;
@@ -193,39 +231,21 @@ function getYears() {
 } 
 
 function checkSurvey(data) {
+	for(var i=1; i<=totalSteps; i++) {
+		if (!validateStep(i-1)) {
+			$(".ap-form-step").hide();
+			$(".ap-form-step[data-step="+(i-1)+"]").show();
+			return false;
+		}
+	}
 	return true;
-}
-
-// submit the profile informacion
-function submitProfileData() {
-	// get the array of fields
-	var fields = ['gender', 'year_of_birth', 'skin', 'highest_school_level', 'province', 'marital_status', 'occupation'];
-
-	// get the information for all the fields
-	var data = {};
-	for (var i = 0; i < fields.length; i++) {
-		var field = fields[i];
-		var value = $('#' + field).val().trim();
-		if (value) data[field] = value;
-	}
-
-	// don't let you pass without filling all the fields
-	if (Object.keys(data).length < 7) {
-		M.toast({html: 'Por favor complete todos los campos antes de continuar'});
-		return false;
-	}
-
-	// save information in the backend
-	apretaste.send({
-		"command": "PERFIL UPDATE",
-		"data": data,
-		"redirect": false,
-		'callback': {'name': 'callbackProfileData'}
-	});
 }
 
 // callback to re-load the service
 function callbackProfileData() {
+
+	toast("Datos salvados correctamente.");
+
 	apretaste.send({
 		command: "ENCUESTA"
 	});
@@ -301,47 +321,4 @@ function submitSurvey() {
 		$('#questions-section').hide();
 		$('#message-section').show();
 	}
-
-
-}
-
-// Polyfill Functions
-
-if (!Object.keys) {
-	Object.keys = function () {
-		'use strict';
-
-		var hasOwnProperty = Object.prototype.hasOwnProperty,
-			hasDontEnumBug = !{
-				toString: null
-			}.propertyIsEnumerable('toString'),
-			dontEnums = ['toString', 'toLocaleString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'constructor'],
-			dontEnumsLength = dontEnums.length;
-
-		return function (obj) {
-			if (_typeof(obj) !== 'object' && (typeof obj !== 'function' || obj === null)) {
-				throw new TypeError('Object.keys called on non-object');
-			}
-
-			var result = [],
-				prop,
-				i;
-
-			for (prop in obj) {
-				if (hasOwnProperty.call(obj, prop)) {
-					result.push(prop);
-				}
-			}
-
-			if (hasDontEnumBug) {
-				for (i = 0; i < dontEnumsLength; i++) {
-					if (hasOwnProperty.call(obj, dontEnums[i])) {
-						result.push(dontEnums[i]);
-					}
-				}
-			}
-
-			return result;
-		};
-	}();
 }

@@ -46,18 +46,12 @@
 	<div id="questions-section" class="hidden">
 		<div class="row">
 			<div class="col s12">
-				<h1><%= survey.title %></h1>
-
 				<div class="progress">
 					<div id="progress-bar" class="determinate" style="width: 0%;"></div>
 				</div>
-
-				<% if(survey.details){ %>
-					<p><%= survey.details %></p>
-				<% } %>
 			</div>
 			<div class="col s12">
-				<% for(var i=0; i<survey.questions.length; i++){
+				<% for(var i=0; i < survey.questions.length; i++){
 					var question = survey.questions[i]; %>
 
 					<div class="ap-form-step" data-step="<%= i %>">
@@ -97,14 +91,16 @@
 							<% } %>
 
 							<% if (question.widget == 'RANKING') { %>
-								<div class="flexible">
+								<div class="flexible" id="question_flexible_<%= question.id %>" data-selected="0" data-total="<%= question.answers.length %>" data-question="<%= question.id %>">
 									<% for(var j=0; j<question.answers.length; j++){
 										var answer = question.answers[j]; %>
-										<div id="answer_<%= answer.id %>" data-question="<%= question.id %>" data-answer="<%= answer.id %>" class="flexible-item answer-item" data-order="<%= j+1 %>" style="order: <%= j+1 %>;">
-												<span><%= answer.title %></span>
-												<input required class="answer_<%= question.id %> answer-order with-gap field-number"
-													   name="question_<%= question.id %>_<%= answer.id %>" value="<%= j+1 %>"
-													   data-question="<%= question.id %>" data-answer="<%= answer.id %>" id="answer_value_<%= answer.id %>" type="hidden"/>
+										<div id="answer_<%= answer.id %>" data-question="<%= question.id %>" data-answer="<%= answer.id %>" class="flexible-item answer-item" data-order="0" style="order: 0;">
+											<input required class="answer_<%= question.id %> answer-order answer-ranking"
+												   name="question_<%= question.id %>_<%= answer.id %>" value="0"
+												   data-question="<%= question.id %>" data-answer="<%= answer.id %>" id="answer_value_<%= answer.id %>"
+													style="width: 50px; border: 0px; text-align: center; color:gray; font-size: 24px;"/>
+											<span><%= answer.title %></span>
+
 											<a class="btn btn-up" data-answer="<%= answer.id %>"><i class="fa fa-arrow-up"></i></a>
 											<a class="btn btn-down" data-answer="<%= answer.id %>"><i class="fa fa-arrow-down"></i></a>
 										</div>
