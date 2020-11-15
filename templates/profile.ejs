@@ -20,7 +20,10 @@
 				<select id="<%= field %>" name="<%= field %>" class="validate" required>
 					<option value=""></option>
 					<% for(var key in fields[field].collection) { %>
-						<% var selected = key==fields[field].selectedValue ? 'selected' : '' %>
+						<% var selected = (
+ 								  (fields[field].valueIsKey && key == fields[field].selectedValue) ||
+								 (!fields[field].valueIsKey && fields[field].collection[key] == fields[field].selectedValue)
+						) ? 'selected' : '' %>
 						<option <%= selected %> value="<%= (fields[field].valueIsKey ? key :  fields[field].collection[key]) %>"><%= fields[field].collection[key] %></option>
 					<% } %>
 				</select>

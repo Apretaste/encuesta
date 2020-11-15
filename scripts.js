@@ -247,7 +247,8 @@ function callbackProfileData() {
 	toast("Datos salvados correctamente.");
 
 	apretaste.send({
-		command: "ENCUESTA"
+		command: "ENCUESTA",
+		data: {nocache: Date.now()}
 	});
 }
 
