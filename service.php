@@ -60,6 +60,7 @@ class Service
 	 */
 	public function _saveperfil(Request $request, Response &$response){
 		Person::update($request->person->id, $request->input->data);
+		$request->person = Person::find($request->person->id);
 		$this->_main($request, $response);
 	}
 
