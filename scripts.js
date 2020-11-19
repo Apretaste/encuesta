@@ -241,17 +241,6 @@ function checkSurvey(data) {
 	return true;
 }
 
-// callback to re-load the service
-function callbackProfileData() {
-
-	toast("Datos salvados correctamente.");
-
-	apretaste.send({
-		command: "ENCUESTA",
-		data: {nocache: Date.now()}
-	});
-}
-
 // accept the terms of a survey
 function acceptSurvey() {
 	// get values for both checkboxes

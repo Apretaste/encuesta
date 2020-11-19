@@ -49,6 +49,21 @@ class Service
 	}
 
 	/**
+	 * SAVE PROFILE
+	 *
+	 * @param Request $request
+	 * @param Response $response
+	 * @throws FeedException
+	 * @throws \Framework\Alert
+	 * @throws \Kreait\Firebase\Exception\FirebaseException
+	 * @throws \Kreait\Firebase\Exception\MessagingException
+	 */
+	public function _saveperfil(Request $request, Response &$response){
+		Person::update($request->person->id, $request->input->data);
+		$this->_main($request, $response);
+	}
+
+	/**
 	 * Get the list of surveys opened
 	 *
 	 * @param Request $request
