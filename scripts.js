@@ -22,7 +22,7 @@ function reorder(){
 		var order =  $(this).attr('data-order');
 		var answerId = $(this).attr('data-answer');
 
-		console.log("answer "+answerId+" order "+order);
+		//console.log("answer "+answerId+" order "+order);
 
 		$(this).css('order', order)
 		var input = $("#answer_value_" + answerId);
@@ -38,13 +38,13 @@ function validateStep(stepNumber) {
 	switch(question.widget) {
 		case 'MULTIPLE':
 			if ($('.answer_'+question.id+':checked').length == 0) {
-				toast('Responda antes de continuar');
+				toast('Escoja una respuesta');
 				return false;
 			}
 			break;
 		case 'RANDOM':
 			if ($('.answer_'+question.id+':checked').length == 0) {
-				toast('Responda antes de continuar');
+				toast('Escoja una respuesta');
 				return false;
 			}
 			break;
@@ -60,7 +60,7 @@ function validateStep(stepNumber) {
 
 		case 'RANKING':
 			if ($('.answer_'+question.id+'[value="0"]').length > 0) {
-				toast('Debe dar un orden a todas las respuestas. Mueva las que estan en 0.');
+				toast('Ordene las respuestas que están en cero');
 				return false;
 			}
 			break;
