@@ -56,7 +56,12 @@ function validateStep(stepNumber) {
 			}
 			break;
 		case 'FREE':
-			return $('#question_' + question.id).val().length > 0;
+			var l = $('#question_' + question.id).val().length;
+			if (l < 1) {
+				toast("Responda antes de continuar");
+				return false;
+			}
+			break;
 
 		case 'RANKING':
 			if ($('.answer_'+question.id+'[value="0"]').length > 0) {
