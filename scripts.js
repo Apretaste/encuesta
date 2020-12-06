@@ -56,7 +56,7 @@ function validateStep(stepNumber) {
 			}
 			break;
 		case 'FREE':
-			break;
+			return $('#question_' + question.id).val().length > 0;
 
 		case 'RANKING':
 			if ($('.answer_'+question.id+'[value="0"]').length > 0) {
