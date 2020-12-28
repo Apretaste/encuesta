@@ -194,7 +194,7 @@ class Service
 			FROM _survey
 			INNER JOIN _survey_question	ON _survey_question.survey = _survey.id
 			LEFT JOIN _survey_answer ON _survey_answer.question = _survey_question.id
-			WHERE _survey.id = {$request->input->data->id}
+			WHERE _survey.id = {$request->input->data->id} AND _survey.active = 1
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
