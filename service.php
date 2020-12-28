@@ -195,6 +195,8 @@ class Service
 			INNER JOIN _survey_question	ON _survey_question.survey = _survey.id
 			LEFT JOIN _survey_answer ON _survey_answer.question = _survey_question.id
 			WHERE _survey.id = {$request->input->data->id} AND _survey.active = 1
+			AND deadline >= CURRENT_DATE
+			AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND _survey.id = C.survey_id);
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
@@ -264,7 +266,9 @@ class Service
 		$survey = Database::queryFirst("
 			SELECT A.id, A.value, A.title
 			FROM _survey A
-			WHERE A.id = {$request->input->data->survey} and active = 1");
+			WHERE A.id = {$request->input->data->survey} and active = 1
+			AND deadline >= CURRENT_DATE
+			AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND A.id = C.survey_id);");
 
 		if (!isset($survey->id)) {
 			$response->setTemplate('message.ejs', [
