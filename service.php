@@ -264,7 +264,7 @@ class Service
 		$survey = Database::queryFirst("
 			SELECT A.id, A.value, A.title
 			FROM _survey A
-			WHERE A.id = {$request->input->data->survey}");
+			WHERE A.id = {$request->input->data->survey} and active = 1");
 
 		if (!isset($survey->id)) {
 			$response->setTemplate('message.ejs', [
