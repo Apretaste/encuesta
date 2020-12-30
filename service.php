@@ -196,7 +196,7 @@ class Service
 			LEFT JOIN _survey_answer ON _survey_answer.question = _survey_question.id
 			WHERE _survey.id = {$request->input->data->id} AND _survey.active = 1
 			AND deadline >= CURRENT_DATE
-			AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND _survey.id = C.survey_id);
+			AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND _survey.id = C.survey_id)
 			ORDER BY _survey_question.id, _survey_answer.id");
 
 		// do not process invalid responses
