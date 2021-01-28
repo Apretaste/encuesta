@@ -212,7 +212,7 @@ class Service
 				return $response->setTemplate('message.ejs', [
 					'header' => 'No puede contestar la encuesta',
 					'icon' => 'thumb_down',
-					'text' => "Esta es una encuesta privada a la cual fue invitada solo un grupo específico de usuarios. Si recibió una invitación y este mensaje le sale por error, por favor escríbanos al soporte.",
+					'text' => "Esta es una encuesta privada a la cual fue invitado un grupo específico de usuarios. Si recibió una invitación y este mensaje le sale por error, por favor escríbanos al soporte.",
 					'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas'],
 				]);
 			}
