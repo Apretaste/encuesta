@@ -190,7 +190,8 @@ class Service
 			    _survey_question.widget AS question_widget,
 			    _survey_question.min_answers AS question_min_answers,
 				_survey_answer.id AS answer,
-				_survey_answer.title AS answer_title
+				_survey_answer.title AS answer_title,
+			    _survey.filter   
 			FROM _survey
 			INNER JOIN _survey_question	ON _survey_question.survey = _survey.id
 			LEFT JOIN _survey_answer ON _survey_answer.question = _survey_question.id
@@ -203,6 +204,20 @@ class Service
 		if (empty($res) || !isset($res[0])) {
 			return;
 		}
+
+		if (!empty($res[0]->filter)) {
+			$check = Database::queryFirst("SELECT id FROM person WHERE id = {$request->person->id} AND ({$res[0]->filter});");
+
+			if (empty($check)) {
+				return $response->setTemplate('message.ejs', [
+					'header' => 'No puede contestar la encuesta',
+					'icon' => 'thumb_down',
+					'text' => "Esta es una encuesta privada a la cual fue invitado un grupo específico de usuarios. Si recibió una invitación y este mensaje le sale por error, por favor escríbanos al soporte.",
+					'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas'],
+				]);
+			}
+		}
+
 
 		// message if the survey was already completed
 		if ($this->isSurveyComplete($res[0]->survey, $request->person->id)) {
