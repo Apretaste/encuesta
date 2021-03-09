@@ -20,7 +20,7 @@ class Service
 	 * @param Response $response
 	 * @author salvipascual
 	 */
-	public function _main(Request $request, Response &$response)
+	public function _main(Request $request, Response $response)
 	{
 		// redirect to the list of surveys opened
 		$this->_lista($request, $response);
@@ -372,14 +372,15 @@ class Service
 			if (Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
 				// calculate a random number
 				$seed = rand(1, 6);
+				$currentRaffle = date('Y-m-d');
 
 				// 3 tickets para la rifa
 				if ($seed === 1) {
-					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id}),('AMULET',{$request->person->id}),('AMULET',{$request->person->id})");
+					Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 3) ON DUPLICATE KEY UPDATE tickets = tickets + 3");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 3 tickets para la rifa';
 				} // 1 ticket para la rifa
 				elseif ($seed === 2) {
-					Database::query("INSERT INTO ticket (origin,person_id) VALUES ('AMULET',{$request->person->id})");
+					Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 1) ON DUPLICATE KEY UPDATE tickets = tickets + 1");
 					$msg .= 'Los poderes del amuleto del Druida te regalan 1 ticket para la rifa';
 				} // 3 flores
 				elseif ($seed === 3) {
