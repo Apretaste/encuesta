@@ -56,6 +56,7 @@
 
 					<div class="ap-form-step" data-step="<%= i %>">
 						<h3><%= question.title %></h3>
+						<input class="answer-time" type="hidden" name="answer_time_<%= question.id %>" value="0" data-id="<%= question.id %>" data-step="<%= i %>">
 						<div id="<%= question.id %>" class="question">
 							<% if (question.widget == 'MULTIPLE' || question.widget == 'RANDOM') { %>
 								<% if ( question.widget == 'RANDOM') question.answers.sort(function() { return Math.random() - 0.5 }) %>

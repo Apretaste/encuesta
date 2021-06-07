@@ -194,7 +194,18 @@ $(function () {
 
 		reorder();
 	});
+
+	setTimeout(tictac, 1000);
 });
+
+function tictac(){
+	if ($(".answer-time").length > 0) {
+		var at = $("#answer-time[data-step="+currentStep+"]");
+		var seconds = parseInt(at.val());
+		at.val(seconds + 1);
+		setTimeout(tictac, 1000);
+	}
+}
 
 function toast(message){
 	M.toast({html: message});

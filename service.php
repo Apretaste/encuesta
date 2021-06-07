@@ -297,7 +297,15 @@ class Service
 
 		$request->input->data = get_object_vars($request->input->data);
 		$cacheQuestions = [];
-		//  (id, person_id, survey, question, answer, position, explanation)
+		//  (id, person_id, survey, question, answer, position, explanation, duration)
+		$durations = [];
+		foreach($request->input->data as $key => $value) {
+			if (stripos($key, 'answer_time_') === 0) {
+				$parts = explode('_', $key);
+				$durations[(int)$parts[2]] = (int) $value;
+			}
+		}
+
 		$values = [];
 		foreach($request->input->data as $key => $value) {
 			if (stripos($key,'question_') === 0) {
@@ -308,27 +316,28 @@ class Service
 				if (!isset($cacheQuestions[$questionId])) {
 					$cacheQuestions[$questionId] = Database::queryFirst("SELECT * FROM _survey_question WHERE id = $questionId");
 				}
-				$question = $cacheQuestions[$questionId];
 
+				$question = $cacheQuestions[$questionId];
+				$duration = $durations[$questionId] ?? 0;
 				if ($question) {
 					switch($question->widget) {
 						case 'MULTIPLE':
 						case 'RANDOM':
 							$answerId = $value;
-							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '')";
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '', $duration)";
 						break;
 						case 'SEVERAL':
 							$answerId = $parts[2];
-							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '')";
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, 1, '', $duration)";
 							break;
 						case 'RANKING':
 							$answerId = $parts[2];
 							$position = (int) $value;
-							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, $position, '')";
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, $answerId, $position, '', $duration)";
 							break;
 						case 'FREE':
 							$explanation = Database::escape($value);
-							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, 0, 1, '$explanation')";
+							$values[] = "(uuid(), '{$request->person->id}', {$survey->id}, $questionId, 0, 1, '$explanation', $duration)";
 							break;
 					}
 				}
@@ -354,7 +363,7 @@ class Service
 		$sql = "
 		START TRANSACTION;
 		DELETE FROM _survey_response WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
-		INSERT INTO _survey_response  (id, person_id, survey, question, answer, position, explanation) VALUES $values;
+		INSERT INTO _survey_response  (id, person_id, survey, question, answer, position, explanation, duration) VALUES $values;
 		DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
 		INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time,
 			year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
