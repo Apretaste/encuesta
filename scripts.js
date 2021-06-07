@@ -195,7 +195,6 @@ $(function () {
 		reorder();
 	});
 
-	setTimeout(tictac, 1000);
 });
 
 function tictac(){
@@ -287,6 +286,8 @@ function acceptSurvey() {
 		},
 		redirect: false
 	});
+
+	setTimeout(tictac, 1000);
 }
 
 // submit a survey once completed
