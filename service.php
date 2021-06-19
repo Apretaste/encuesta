@@ -8,8 +8,11 @@ use Apretaste\Request;
 use Apretaste\Response;
 use Apretaste\Challenges;
 use Apretaste\Notifications;
+use Framework\Alert;
 use Framework\Database;
 use Framework\GoogleAnalytics;
+use Kreait\Firebase\Exception\FirebaseException;
+use Kreait\Firebase\Exception\MessagingException;
 
 class Service
 {
@@ -54,9 +57,9 @@ class Service
 	 * @param Request $request
 	 * @param Response $response
 	 * @throws FeedException
-	 * @throws \Framework\Alert
-	 * @throws \Kreait\Firebase\Exception\FirebaseException
-	 * @throws \Kreait\Firebase\Exception\MessagingException
+	 * @throws Alert
+	 * @throws FirebaseException
+	 * @throws MessagingException
 	 */
 	public function _saveperfil(Request $request, Response &$response){
 		Person::update($request->person->id, $request->input->data);
@@ -272,6 +275,11 @@ class Service
 	 *
 	 * @param Request $request
 	 * @param Response $response
+	 * @return Response
+	 * @throws \Apretaste\Alert
+	 * @throws Alert
+	 * @throws FirebaseException
+	 * @throws MessagingException
 	 * @author salvipascual
 	 */
 	public function _responder(Request $request, Response &$response)
@@ -286,13 +294,12 @@ class Service
 			AND NOT EXISTS(SELECT survey_id FROM _survey_done C WHERE C.person_id = {$request->person->id} AND A.id = C.survey_id);");
 
 		if (!isset($survey->id)) {
-			$response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				'header' => 'Encuesta no encontrada',
 				'icon' => 'sentiment_very_dissatisfied',
 				'text' => 'Hubo un error procesando su respuesta. Es posible que la app esté desincronizada. Por favor abra los ajustes y borre los datos guardados. Si el problema persiste, contacte al soporte técnico.',
 				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
-			return;
 		}
 
 		$request->input->data = get_object_vars($request->input->data);
@@ -346,13 +353,12 @@ class Service
 
 		// do not let the user get double credits
 		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			$response->setTemplate('message.ejs', [
+			return $response->setTemplate('message.ejs', [
 				'header' => 'Encuesta completada',
 				'icon' => 'sentiment_very_satisfied',
 				'text' => 'Esta encuesta ha sido completada por usted anteriormente y se le ha asignado el crédito. No es necesario hacer nada mas. ¡Gracias!',
 				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
-			return;
 		}
 
 		$startTime = $request->input->data->startTime ?? date("Y-m-d h:i:s");
@@ -360,97 +366,99 @@ class Service
 
 		// replace all old answers by the new answers in one query
 
-		$sql = "
+		Database::query("
 		START TRANSACTION;
-		DELETE FROM _survey_response WHERE person_id = '{$request->person->id}' AND survey = '{$survey->id}';
 		INSERT INTO _survey_response  (id, person_id, survey, question, answer, position, explanation, duration) VALUES $values;
-		DELETE FROM _survey_done WHERE person_id = '{$request->person->id}' AND survey_id = '{$survey->id}';
 		INSERT INTO _survey_done (survey_id, person_id, country, province, city, start_time,
 			year_of_birth, gender, eyes, skin, body_type, hair, highest_school_level, occupation, marital_status,
 			sexual_orientation, religion) 
 			SELECT {$survey->id}, id, country, province, city, '$startTime' as start_time, year_of_birth, gender, eyes,
 			 skin, body_type, hair, highest_school_level, occupation, marital_status, sexual_orientation, religion
 			 FROM person
-			WHERE id = {$request->person->id}; 
-		COMMIT;";
+			WHERE id = {$request->person->id};
+		UPDATE _survey SET answers = answers+1 WHERE id = '{$survey->id}';	 
+		COMMIT;");
 
-		Database::query($sql);
-
-		// add § for the user if all questions were completed
-		if ($this->isSurveyComplete($survey->id, $request->person->id)) {
-			$msg = '';
-
-			// double credits if you are level Esmeralda or higer
-			if ($request->person->levelCode >= Level::ESMERALDA) {
-				$survey->value *= 2;
-				$msg .= 'Gracias a su nivel, los créditos se han duplicado. ';
-			}
-
-			// run powers for amulet ENCUESTAX2
-			if (Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
-				$survey->value *= 2;
-				$msg .= 'Los poderes del amuleto del Druida duplicaron los créditos. ';
-			}
-
-			// run powers for amulet ENCUESTAS
-			if (Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
-				// calculate a random number
-				$seed = rand(1, 6);
-				$currentRaffle = date('Y-m-d');
-
-				// 3 tickets para la rifa
-				if ($seed === 1) {
-					Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 3) ON DUPLICATE KEY UPDATE tickets = tickets + 3");
-					$msg .= 'Los poderes del amuleto del Druida te regalan 3 tickets para la rifa';
-				} // 1 ticket para la rifa
-				elseif ($seed === 2) {
-					Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 1) ON DUPLICATE KEY UPDATE tickets = tickets + 1");
-					$msg .= 'Los poderes del amuleto del Druida te regalan 1 ticket para la rifa';
-				} // 3 flores
-				elseif ($seed === 3) {
-					Database::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
-					$msg .= 'Los poderes del amuleto del Druida te regalan 3 flores para Piropazo';
-				} // 1 flor
-				elseif ($seed === 4) {
-					Database::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
-					$msg .= 'Los poderes del amuleto del Druida te regalan 1 flor para Piropazo';
-				} // 3 corazones
-				elseif ($seed === 5) {
-					Database::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
-					$msg .= 'Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo';
-				} // 1 de crédito
-				else {
-					$survey->value++;
-					$msg .= 'Los poderes del amuleto del Druida te regalan §1 de crédito';
-				}
-			}
-
-			// transfer the funds
-			Money::send(Money::BANK, $request->person->id, $survey->value, 'Encuesta completada');
-
-			// add a new response to the counter
-			Database::query("UPDATE _survey SET answers=answers+1 WHERE id='{$survey->id}'");
-
-			// notify the user
-			$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
-			Notifications::alert($request->person->id, $msg, 'attach_money', '{"command":"ENCUESTA TERMINADAS"}');
-
-			// submit to Google Analytics 
-			GoogleAnalytics::event('survey_complete', $survey->id);
-
-			// complete the challenge
-			Challenges::complete('fill-survey', $request->person->id);
-
-			// add the experience
-			Level::setExperience('FINISH_SURVEY', $request->person->id);
-
+		// something happens
+		if (!$this->isSurveyComplete($survey->id, $request->person->id)) {
 			return $response->setTemplate('message.ejs', [
-				'header' => '¡Genial! Ya respondió esta encuesta',
-				'icon' => 'thumb_up',
-				'text' => 'Usted ya respondió esta encuesta y como agradecimiento le agregamos §'.$survey->value.' a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.',
-				'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas']
+				'header' => 'Error al completar la encuesta',
+				'icon' => 'sentiment_very_unsatisfied',
+				'text' => 'Hubo un error al completar la encuesta. Intente de nuevo y si el problema persiste consulta al soporte. Disculpa los inconvenientes.',
+				'button' => ['href' => 'ENCUESTA', 'caption' => 'Ver Encuestas'],
 			]);
 		}
+
+		// add § for the user if all questions were completed
+		$msg = '';
+
+		// double credits if you are level Esmeralda or higer
+		if ($request->person->levelCode >= Level::ESMERALDA) {
+			$survey->value *= 2;
+			$msg .= 'Gracias a su nivel, los créditos se han duplicado. ';
+		}
+
+		// run powers for amulet ENCUESTAX2
+		if (Amulets::isActive(Amulets::ENCUESTAX2, $request->person->id)) {
+			$survey->value *= 2;
+			$msg .= 'Los poderes del amuleto del Druida duplicaron los créditos. ';
+		}
+
+		// run powers for amulet ENCUESTAS
+		if (Amulets::isActive(Amulets::ENCUESTAS, $request->person->id)) {
+			// calculate a random number
+			$seed = rand(1, 6);
+			$currentRaffle = date('Y-m-d');
+
+			// 3 tickets para la rifa
+			if ($seed === 1) {
+				Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 3) ON DUPLICATE KEY UPDATE tickets = tickets + 3");
+				$msg .= 'Los poderes del amuleto del Druida te regalan 3 tickets para la rifa';
+			} // 1 ticket para la rifa
+			elseif ($seed === 2) {
+				Database::query("INSERT INTO _rifa_tickets (raffle, person_id, tickets) VALUES ('$currentRaffle', {$request->person->id}, 1) ON DUPLICATE KEY UPDATE tickets = tickets + 1");
+				$msg .= 'Los poderes del amuleto del Druida te regalan 1 ticket para la rifa';
+			} // 3 flores
+			elseif ($seed === 3) {
+				Database::query("UPDATE _piropazo_people SET flowers=flowers+3 WHERE id_person={$request->person->id}");
+				$msg .= 'Los poderes del amuleto del Druida te regalan 3 flores para Piropazo';
+			} // 1 flor
+			elseif ($seed === 4) {
+				Database::query("UPDATE _piropazo_people SET flowers=flowers+1 WHERE id_person={$request->person->id}");
+				$msg .= 'Los poderes del amuleto del Druida te regalan 1 flor para Piropazo';
+			} // 3 corazones
+			elseif ($seed === 5) {
+				Database::query("UPDATE _piropazo_people SET crowns=crowns+3 WHERE id_person={$request->person->id}");
+				$msg .= 'Los poderes del amuleto del Druida te regalan 3 corazones para Piropazo';
+			} // 1 de crédito
+			else {
+				$survey->value++;
+				$msg .= 'Los poderes del amuleto del Druida te regalan §1 de crédito';
+			}
+		}
+
+		// transfer the funds
+		Money::send(Money::BANK, $request->person->id, $survey->value, 'Encuesta completada');
+
+		// notify the user
+		$msg = "Ha ganado §{$survey->value} por contestar la encuesta {$survey->title}. $msg";
+		Notifications::alert($request->person->id, $msg, 'attach_money', '{"command":"ENCUESTA TERMINADAS"}');
+
+		// submit to Google Analytics
+		GoogleAnalytics::event('survey_complete', $survey->id);
+
+		// complete the challenge
+		Challenges::complete('fill-survey', $request->person->id);
+
+		// add the experience
+		Level::setExperience('FINISH_SURVEY', $request->person->id);
+
+		return $response->setTemplate('message.ejs', [
+			'header' => '¡Genial! Ya respondió esta encuesta',
+			'icon' => 'thumb_up',
+			'text' => 'Usted ya respondió esta encuesta y como agradecimiento le agregamos §'.$survey->value.' a su crédito. Recuerde que sus respuestas contribuirán a construir una mejor Cuba para todos. Muchas gracias por su participación.',
+			'button' => ['href' => 'ENCUESTA', 'caption' => 'Otras encuestas']
+		]);
 	}
 
 	/**
@@ -459,16 +467,12 @@ class Service
 	 * @param String $surveyID
 	 * @param String $personID
 	 * @return Boolean, true if survey is 100% completed
+	 * @throws Alert
 	 * @author salvipascual
 	 */
 	private function isSurveyComplete($surveyID, $personID)
 	{
-		$res = Database::query("
-			SELECT * FROM
-			(SELECT COUNT(survey) as total FROM _survey_question WHERE survey='$surveyID') A,
-			(SELECT COUNT(DISTINCT question) as answers FROM _survey_response WHERE survey='$surveyID' AND person_id='$personID') B");
-
-		return $res[0]->total * 1 === $res[0]->answers * 1;
+		return Database::queryFirst("SELECT count(*) as t FROM _survey_done WHERE survey_id = '$surveyID' AND person_id = $personID")->t > 0;
 	}
 
 	/**
